@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	"strings"
+	"sync"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -35,26 +37,48 @@ func sendAnswer(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) err
 	return nil
 }
 
-func MainHandler(bot *tgbotapi.BotAPI, updateConfig tgbotapi.UpdateConfig) {
-	for update := range bot.GetUpdatesChan(updateConfig) {
-		if update.Message == nil {
-			continue
+func addTask(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) {
+
+}
+
+func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.WaitGroup, symahor chan struct{}) {
+	defer func() {
+		<-symahor
+	}()
+	defer mainWg.Done()
+
+	if update.Message == nil {
+		return
+	}
+
+	text := update.Message.Text
+	chatId := update.Message.Chat.ID
+	userName := update.Message.Chat.UserName
+
+	switch text {
+	case "/start":
+		str := fmt.Sprintf("Привет %s", userName)
+		if err := sendMessage(bot, str, chatId); err != nil {
+			//TODO добавить обработку
 		}
 
-		text := update.Message.Text
+	case "/addTask":
+		str := fmt.Sprintf(`%s чтобы добавить задачу опиште вашу задачу в формате: 
+		Имя задачи, Описание, дата, время. 
+		Пример:\n Поход к врачу, Сегодня в 15:00 запись к зубному, 25.08.2025, 12:00`, userName)
+		if err := sendMessage(bot, str, chatId); err != nil {
+			//TODO добавить обработку
+		}
 
-		switch text {
-		case "/start":
-			if err := sendMessage(bot, "Привет test", update.Message.Chat.ID); err != nil {
-				//TODO добавить обработку
-			}
+	case "/deleteTask":
+	case "/changeTask":
 
-		default:
-			if isMessageForBot(&update) {
-				if err := sendAnswer(bot, &update, update.Message.Chat.ID); err != nil {
-					//TODO добавить обработку
-				}
-			}
+	case "/myTasks":
+
+	default:
+		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаюю=`, userName)
+		if err := sendMessage(bot, str, chatId); err != nil {
+			//TODO добавить обработку
 		}
 	}
 }
