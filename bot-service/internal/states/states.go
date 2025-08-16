@@ -1,4 +1,4 @@
-package handlers
+package states
 
 //Enums for session
 
@@ -13,8 +13,6 @@ const (
 	MyTasks
 )
 
-// func (s Status) String() string {
-// 	switch s {
-
-// 	}
-// }
+func GetZeroValue() Status {
+	return Unknown
+}

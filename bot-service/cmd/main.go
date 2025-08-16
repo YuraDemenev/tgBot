@@ -4,6 +4,7 @@ import (
 	"os"
 	"sync"
 	"tgbot/bot-service/internal/handlers"
+	"tgbot/bot-service/internal/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -29,13 +30,15 @@ func main() {
 	symahor := make(chan struct{}, 1000)
 
 	bot := connectionWithTelegram()
+	sessionStorage := services.CreateSessionStorage()
+
 	//Get config message chan
 	updateConfig := tgbotapi.NewUpdate(0)
 	//Work with message chan
 	for update := range bot.GetUpdatesChan(updateConfig) {
 		symahor <- struct{}{}
 		mainWG.Add(1)
-		go handlers.HandlUpdate(bot, update, &mainWG, symahor)
+		go handlers.HandlUpdate(bot, update, &mainWG, symahor, sessionStorage)
 	}
 
 	mainWG.Wait()

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"tgbot/bot-service/internal/services"
+	"tgbot/bot-service/internal/states"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
@@ -41,7 +43,8 @@ func addTask(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) {
 
 }
 
-func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.WaitGroup, symahor chan struct{}) {
+func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.WaitGroup,
+	symahor chan struct{}, sessionStorage *services.SessionStorage) {
 	defer func() {
 		<-symahor
 	}()
@@ -55,6 +58,16 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 	chatId := update.Message.Chat.ID
 	userName := update.Message.Chat.UserName
 
+	status := sessionStorage.GetStatus(services.GetUserHash(userName))
+	if status == states.GetZeroValue() {
+		handleCommands(bot, chatId, text, userName)
+	} else {
+
+	}
+
+}
+
+func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string) {
 	switch text {
 	case "/start":
 		str := fmt.Sprintf("Привет %s", userName)
@@ -80,5 +93,18 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 		if err := sendMessage(bot, str, chatId); err != nil {
 			//TODO добавить обработку
 		}
+	}
+}
+
+func handleValues(status states.Status, sessionStorage *services.SessionStorage, text, userName string) {
+	switch status {
+	case states.AddTask:
+	case states.DeleteTask:
+	case states.ChangeTask:
+	case states.MyTasks:
+	default:
+		logrus.Errorf("Uknown status: %v", status)
+		//Set zero value
+		sessionStorage.StoreSession(services.GetUserHash(userName), states.GetZeroValue())
 	}
 }
