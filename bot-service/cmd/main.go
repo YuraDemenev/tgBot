@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net"
 	"os"
 	"sync"
@@ -26,7 +27,7 @@ func connectionWithTelegram() *tgbotapi.BotAPI {
 	return bot
 }
 
-func main() {
+func startGRPCServer(ctx context.Context) {
 	// add a listener address
 	lis, err := net.Listen("tcp", ":50001")
 	if err != nil {
@@ -35,8 +36,25 @@ func main() {
 
 	// start the grpc server
 	grpcServer := grpc.NewServer()
+
 	// start serving to the address
-	logrus.Fatal(grpcServer.Serve(lis))
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
+			logrus.Fatalf("grpcServer can't serve: %v", err)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		grpcServer.GracefulStop()
+		return
+	}
+}
+
+func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go startGRPCServer(ctx)
 
 	//Start bot
 	logrus.SetFormatter(new(logrus.JSONFormatter))

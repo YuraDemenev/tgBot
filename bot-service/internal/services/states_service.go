@@ -1,9 +1,11 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
+	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/health"
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"time"
 
@@ -58,13 +60,50 @@ func AddTaskService(userText string) error {
 		return err
 	}
 	task.Time = timestamppb.New(parsedTime)
-
+	return nil
 }
 
 func sendTaskGRPC(task *taskpb.Task) (bool, error) {
-	conn, err := grpc.NewClient("localhost:5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	err := healthCheck()
 	if err != nil {
+		return false, err
+	}
+	// taskResp, err := h.taskClient.SendTask(ctx, task)
+	// if err != nil {
+	// 	logrus.Errorf("Failed to send task via gRPC: %v", err)
+	// 	return false, err
+	// }
+	// logrus.Infof("Task sent successfully, response: %v", taskResp.Ok)
+	// return taskResp.Ok, nil
 
+	return true, nil
+}
+
+func healthCheck() error {
+	//Подготавливаем Health check
+	conn, err := grpc.NewClient("localhost:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logrus.Errorf("healthCheck can`t check health, err:%v", err)
+		return err
 	}
 	defer conn.Close()
+	healthClient := health.NewHealthClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	//Делаем health check
+	resp, err := healthClient.Check(ctx, &health.HealthCheckRequest{Service: "task.TaskService"})
+	if err != nil {
+		logrus.Errorf("healthCheck, Health check failed : %v", err)
+		return err
+	}
+
+	// Сервер готов, отправляем задачу
+	if resp.Status == health.HealthCheckResponse_SERVING {
+		logrus.Errorf("healthCheck, health resp got status: %s", resp.Status.String())
+		return nil
+	}
+
+	return fmt.Errorf("healthCheck, task-service not ready")
 }
