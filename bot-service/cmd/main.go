@@ -4,7 +4,9 @@ import (
 	"context"
 	"net"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"tgbot/bot-service/internal/handlers"
 	"tgbot/bot-service/internal/services"
 
@@ -66,6 +68,18 @@ func main() {
 
 	//Get config message chan
 	updateConfig := tgbotapi.NewUpdate(0)
+
+	//handle graceful shutdown signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		sig := <-sigChan
+		logrus.Infof("Received shutdown signal: %v", sig)
+		cancel()
+		bot.StopReceivingUpdates()
+	}()
+
+	logrus.Info("Service bot-service started")
 	//Work with message chan
 	for update := range bot.GetUpdatesChan(updateConfig) {
 		semaphor <- struct{}{}

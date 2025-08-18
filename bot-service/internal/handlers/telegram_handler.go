@@ -76,7 +76,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string) {
 		}
 
 	case "/addTask":
-		str := fmt.Sprintf(`%s чтобы добавить задачу опиште вашу задачу в формате: 
+		str := fmt.Sprintf(`%s чтобы добавить задачу опишите вашу задачу в формате:
 		Имя задачи, Описание, дата, время. 
 		Пример:\n Поход к врачу, Сегодня в 15:00 запись к зубному, 25.08.2025, 12:00`, userName)
 		if err := sendMessage(bot, str, chatId); err != nil {
@@ -89,7 +89,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string) {
 	case "/myTasks":
 
 	default:
-		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаюю=`, userName)
+		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаю`, userName)
 		if err := sendMessage(bot, str, chatId); err != nil {
 			//TODO добавить обработку
 		}

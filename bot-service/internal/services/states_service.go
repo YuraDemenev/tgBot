@@ -68,15 +68,27 @@ func sendTaskGRPC(task *taskpb.Task) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// taskResp, err := h.taskClient.SendTask(ctx, task)
-	// if err != nil {
-	// 	logrus.Errorf("Failed to send task via gRPC: %v", err)
-	// 	return false, err
-	// }
-	// logrus.Infof("Task sent successfully, response: %v", taskResp.Ok)
-	// return taskResp.Ok, nil
 
-	return true, nil
+	// Create grpc connection to task-service
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
+		return false, err
+	}
+	defer conn.Close()
+
+	// create grpc client
+	client := taskpb.NewTaskServiceClient(conn)
+
+	ctx := context.Background()
+	resp, err := client.SendTask(ctx, task)
+	if err != nil {
+		logrus.Errorf("sendTaskGRPC, failed to send task via gRPC: %v", err)
+		return false, err
+	}
+
+	logrus.Infof("Task sent successfully to task-service, response: %v", resp.Ok)
+	return resp.Ok, nil
 }
 
 func healthCheck() error {
@@ -99,7 +111,7 @@ func healthCheck() error {
 		return err
 	}
 
-	// Сервер готов, отправляем задачу
+	// Сервер готов, можно отправлять задачу
 	if resp.Status == health.HealthCheckResponse_SERVING {
 		logrus.Errorf("healthCheck, health resp got status: %s", resp.Status.String())
 		return nil
