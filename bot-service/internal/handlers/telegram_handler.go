@@ -44,9 +44,9 @@ func addTask(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) {
 }
 
 func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.WaitGroup,
-	symahor chan struct{}, sessionStorage *services.SessionStorage) {
+	semaphor chan struct{}, sessionStorage *services.SessionStorage) {
 	defer func() {
-		<-symahor
+		<-semaphor
 	}()
 	defer mainWg.Done()
 

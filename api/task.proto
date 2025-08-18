@@ -1,0 +1,20 @@
+syntax="proto3";
+package task;
+
+option go_package = "tgBot/bot-service/protoGenFiles/taskpb";
+
+import "google/protobuf/timestamp.proto";
+
+message MyDate {
+  int32 day = 1;
+  int32 month = 2;
+  int32 year = 3;
+}
+
+message task {
+  string name = 1;
+  string description = 2;  // Unique ID number for this person.
+  MyDate date =3;
+  google.protobuf.Timestamp time = 4;
+
+}

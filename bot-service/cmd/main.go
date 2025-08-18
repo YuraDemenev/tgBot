@@ -27,7 +27,7 @@ func connectionWithTelegram() *tgbotapi.BotAPI {
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	mainWG := sync.WaitGroup{}
-	symahor := make(chan struct{}, 1000)
+	semaphor := make(chan struct{}, 1000)
 
 	bot := connectionWithTelegram()
 	sessionStorage := services.CreateSessionStorage()
@@ -36,9 +36,9 @@ func main() {
 	updateConfig := tgbotapi.NewUpdate(0)
 	//Work with message chan
 	for update := range bot.GetUpdatesChan(updateConfig) {
-		symahor <- struct{}{}
+		semaphor <- struct{}{}
 		mainWG.Add(1)
-		go handlers.HandlUpdate(bot, update, &mainWG, symahor, sessionStorage)
+		go handlers.HandlUpdate(bot, update, &mainWG, semaphor, sessionStorage)
 	}
 
 	mainWG.Wait()
