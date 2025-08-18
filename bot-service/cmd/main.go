@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"os"
 	"sync"
 	"tgbot/bot-service/internal/handlers"
@@ -8,6 +9,7 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 )
 
 func connectionWithTelegram() *tgbotapi.BotAPI {
@@ -25,6 +27,18 @@ func connectionWithTelegram() *tgbotapi.BotAPI {
 }
 
 func main() {
+	// add a listener address
+	lis, err := net.Listen("tcp", ":50001")
+	if err != nil {
+		logrus.Fatalf("ERROR STARTING THE SERVER : %v", err)
+	}
+
+	// start the grpc server
+	grpcServer := grpc.NewServer()
+	// start serving to the address
+	logrus.Fatal(grpcServer.Serve(lis))
+
+	//Start bot
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	mainWG := sync.WaitGroup{}
 	semaphor := make(chan struct{}, 1000)

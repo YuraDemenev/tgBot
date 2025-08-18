@@ -159,7 +159,7 @@ const file_api_task_proto_rawDesc = "" +
 	"\x03day\x18\x01 \x01(\x05R\x03day\x12\x14\n" +
 	"\x05month\x18\x02 \x01(\x05R\x05month\x12\x12\n" +
 	"\x04year\x18\x03 \x01(\x05R\x04year\"\x8e\x01\n" +
-	"\x04task\x12\x12\n" +
+	"\x04Task\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12 \n" +
 	"\x04date\x18\x03 \x01(\v2\f.task.MyDateR\x04date\x12.\n" +
@@ -180,12 +180,12 @@ func file_api_task_proto_rawDescGZIP() []byte {
 var file_api_task_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_api_task_proto_goTypes = []any{
 	(*MyDate)(nil),                // 0: task.MyDate
-	(*Task)(nil),                  // 1: task.task
+	(*Task)(nil),                  // 1: task.Task
 	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
 var file_api_task_proto_depIdxs = []int32{
-	0, // 0: task.task.date:type_name -> task.MyDate
-	2, // 1: task.task.time:type_name -> google.protobuf.Timestamp
+	0, // 0: task.Task.date:type_name -> task.MyDate
+	2, // 1: task.Task.time:type_name -> google.protobuf.Timestamp
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name

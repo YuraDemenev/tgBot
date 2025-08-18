@@ -11,7 +11,7 @@ message MyDate {
   int32 year = 3;
 }
 
-message task {
+message Task {
   string name = 1;
   string description = 2;  // Unique ID number for this person.
   MyDate date =3;

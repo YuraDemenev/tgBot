@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -57,4 +59,12 @@ func AddTaskService(userText string) error {
 	}
 	task.Time = timestamppb.New(parsedTime)
 
+}
+
+func sendTaskGRPC(task *taskpb.Task) (bool, error) {
+	conn, err := grpc.NewClient("localhost:5001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+
+	}
+	defer conn.Close()
 }

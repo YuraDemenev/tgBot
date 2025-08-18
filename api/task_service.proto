@@ -1,0 +1,14 @@
+syntax = "proto3";
+package task;
+
+option go_package = "tgBot/bot-service/protoGenFiles/taskpb";
+
+import "api/task.proto";
+
+service TaskService {
+  rpc SendTask(Task) returns (SendTaskResponse);
+}
+
+message SendTaskResponse {
+  bool ok = 1;
+}
