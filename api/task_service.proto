@@ -3,12 +3,13 @@ package task;
 
 option go_package = "tgBot/bot-service/protoGenFiles/taskpb";
 
-import "api/task.proto";
+import "google/rpc/status.proto";
+import "task.proto";
 
 service TaskService {
-  rpc SendTask(Task) returns (SendTaskResponse);
+  rpc SendTask(SendTaskRequest) returns (google.rpc.Status);
 }
 
-message SendTaskResponse {
-  bool ok = 1;
+message SendTaskRequest {
+  Task task = 1;
 }

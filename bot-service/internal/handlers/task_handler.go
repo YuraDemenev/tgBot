@@ -1,25 +1,53 @@
-package services
+package handlers
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 	"strings"
-	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/health"
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func AddTaskService(userText string) error {
+func SendTaskGRPC(userText string) error {
+	task, err := createTask(userText)
+	if err != nil {
+		return err
+	}
+
+	err = healthCheck()
+	if err != nil {
+		return err
+	}
+	// Create grpc connection to task-service
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithInsecure())
+	if err != nil {
+		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
+		return err
+	}
+	defer conn.Close()
+
+	client := taskpb.NewTaskServiceClient(conn)
+
+	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task})
+	if err != nil {
+		logrus.Errorf("SendTaskGRPC, can`t send task err%v", err)
+	}
+	fmt.Println(resp)
+	return nil
+}
+
+func createTask(userText string) (*taskpb.Task, error) {
 	stringsArr := strings.Split(userText, ",")
 	if len(stringsArr) != 4 {
 		err := fmt.Errorf("AddTaskService, stringsArr has length:%b", len(stringsArr))
-		return err
+		return nil, err
 	}
 
 	// Clear strings
@@ -35,14 +63,14 @@ func AddTaskService(userText string) error {
 	dateArrString := strings.Split(stringsArr[2], ".")
 	if len(dateArrString) != 3 {
 		err := fmt.Errorf("AddTaskService, dateArrString has length:%b", len(dateArrString))
-		return err
+		return nil, err
 	}
 	dateArr := make([]int32, 3)
 	for i, v := range dateArrString {
 		integer, err := strconv.Atoi(v)
 		if err != nil {
 			err := fmt.Errorf("AddTaskService, can`t convert str to int:%s", v)
-			return err
+			return nil, err
 		}
 		dateArr[i] = int32(integer)
 	}
@@ -54,65 +82,37 @@ func AddTaskService(userText string) error {
 	}
 
 	// Work with time
-	parsedTime, err := time.Parse(time.RFC3339, stringsArr[3])
+	parsedTime, err := time.Parse("15:05", stringsArr[3])
 	if err != nil {
 		logrus.Errorf("AddTaskService, can`t parse time err: %w", err)
-		return err
+		return nil, err
 	}
 	task.Time = timestamppb.New(parsedTime)
-	return nil
-}
 
-func sendTaskGRPC(task *taskpb.Task) (bool, error) {
-	err := healthCheck()
-	if err != nil {
-		return false, err
-	}
-
-	// Create grpc connection to task-service
-	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
-		return false, err
-	}
-	defer conn.Close()
-
-	// create grpc client
-	client := taskpb.NewTaskServiceClient(conn)
-
-	ctx := context.Background()
-	resp, err := client.SendTask(ctx, task)
-	if err != nil {
-		logrus.Errorf("sendTaskGRPC, failed to send task via gRPC: %v", err)
-		return false, err
-	}
-
-	logrus.Infof("Task sent successfully to task-service, response: %v", resp.Ok)
-	return resp.Ok, nil
+	return task, nil
 }
 
 func healthCheck() error {
-	//Подготавливаем Health check
+	//Prepare Health check
 	conn, err := grpc.NewClient("localhost:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Errorf("healthCheck can`t check health, err:%v", err)
 		return err
 	}
 	defer conn.Close()
-	healthClient := health.NewHealthClient(conn)
+	healthClient := grpc_health_v1.NewHealthClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	//Делаем health check
-	resp, err := healthClient.Check(ctx, &health.HealthCheckRequest{Service: "task.TaskService"})
+	//Do health check
+	resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{Service: "task.TaskService"})
 	if err != nil {
 		logrus.Errorf("healthCheck, Health check failed : %v", err)
 		return err
 	}
 
-	// Сервер готов, можно отправлять задачу
-	if resp.Status == health.HealthCheckResponse_SERVING {
+	if resp.Status == grpc_health_v1.HealthCheckResponse_SERVING {
 		logrus.Errorf("healthCheck, health resp got status: %s", resp.Status.String())
 		return nil
 	}

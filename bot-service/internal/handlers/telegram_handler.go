@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
 	"tgbot/bot-service/internal/services"
 	"tgbot/bot-service/internal/states"
 
@@ -58,35 +59,39 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 	chatId := update.Message.Chat.ID
 	userName := update.Message.Chat.UserName
 
-	status := sessionStorage.GetStatus(services.GetUserHash(userName))
+	status := sessionStorage.GetStatus(userName)
 	if status == states.GetZeroValue() {
-		handleCommands(bot, chatId, text, userName)
+		handleCommands(bot, chatId, text, userName, sessionStorage)
 	} else {
-
+		handleStates(bot, status, sessionStorage, text, userName, chatId)
 	}
-
 }
 
-func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string) {
+func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, sessionStorage *services.SessionStorage) {
 	switch text {
 	case "/start":
 		str := fmt.Sprintf("Привет %s", userName)
 		if err := sendMessage(bot, str, chatId); err != nil {
-			//TODO добавить обработку
+			logrus.Errorf("handler commands, /start get error: %v", err)
+			return
 		}
 
 	case "/addTask":
-		str := fmt.Sprintf(`%s чтобы добавить задачу опишите вашу задачу в формате:
-		Имя задачи, Описание, дата, время. 
+		str := fmt.Sprintf(`%s чтобы добавить задачу опишите вашу задачу в формате:\n
+		Имя задачи, Описание, дата, время.
 		Пример:\n Поход к врачу, Сегодня в 15:00 запись к зубному, 25.08.2025, 12:00`, userName)
 		if err := sendMessage(bot, str, chatId); err != nil {
-			//TODO добавить обработку
+			logrus.Errorf("handler commands, /addTask get error: %v", err)
+			return
 		}
+		sessionStorage.StoreSession(userName, states.AddTask)
 
 	case "/deleteTask":
+		sessionStorage.StoreSession(userName, states.DeleteTask)
 	case "/changeTask":
-
+		sessionStorage.StoreSession(userName, states.ChangeTask)
 	case "/myTasks":
+		sessionStorage.StoreSession(userName, states.MyTasks)
 
 	default:
 		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаю`, userName)
@@ -96,15 +101,26 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string) {
 	}
 }
 
-func handleValues(status states.Status, sessionStorage *services.SessionStorage, text, userName string) {
+func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *services.SessionStorage, text, userName string, chatId int64) {
 	switch status {
 	case states.AddTask:
+		err := SendTaskGRPC(text)
+		if err != nil {
+			//Write message to user
+			str := fmt.Sprintf(`Извини %s, но кажется ты совершил ошибку, давай попробуем ещё раз. Напиши сообщение для выполнения комманды`, userName)
+			if err := sendMessage(bot, str, chatId); err != nil {
+				//TODO добавить обработку
+			}
+
+			logrus.Errorf("handleStates, AddTask get error: %v", err)
+			return
+		}
 	case states.DeleteTask:
 	case states.ChangeTask:
 	case states.MyTasks:
 	default:
 		logrus.Errorf("Uknown status: %v", status)
 		//Set zero value
-		sessionStorage.StoreSession(services.GetUserHash(userName), states.GetZeroValue())
+		sessionStorage.StoreSession(userName, states.GetZeroValue())
 	}
 }

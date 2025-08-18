@@ -2,15 +2,16 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v6.30.2
-// source: api/task_service.proto
+// source: task_service.proto
 
 package taskpb
 
 import (
 	context "context"
+	status "google.golang.org/genproto/googleapis/rpc/status"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
+	status1 "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -26,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskServiceClient interface {
-	SendTask(ctx context.Context, in *Task, opts ...grpc.CallOption) (*SendTaskResponse, error)
+	SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*status.Status, error)
 }
 
 type taskServiceClient struct {
@@ -37,9 +38,9 @@ func NewTaskServiceClient(cc grpc.ClientConnInterface) TaskServiceClient {
 	return &taskServiceClient{cc}
 }
 
-func (c *taskServiceClient) SendTask(ctx context.Context, in *Task, opts ...grpc.CallOption) (*SendTaskResponse, error) {
+func (c *taskServiceClient) SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*status.Status, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SendTaskResponse)
+	out := new(status.Status)
 	err := c.cc.Invoke(ctx, TaskService_SendTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +52,7 @@ func (c *taskServiceClient) SendTask(ctx context.Context, in *Task, opts ...grpc
 // All implementations must embed UnimplementedTaskServiceServer
 // for forward compatibility.
 type TaskServiceServer interface {
-	SendTask(context.Context, *Task) (*SendTaskResponse, error)
+	SendTask(context.Context, *SendTaskRequest) (*status.Status, error)
 	mustEmbedUnimplementedTaskServiceServer()
 }
 
@@ -62,8 +63,8 @@ type TaskServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTaskServiceServer struct{}
 
-func (UnimplementedTaskServiceServer) SendTask(context.Context, *Task) (*SendTaskResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendTask not implemented")
+func (UnimplementedTaskServiceServer) SendTask(context.Context, *SendTaskRequest) (*status.Status, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method SendTask not implemented")
 }
 func (UnimplementedTaskServiceServer) mustEmbedUnimplementedTaskServiceServer() {}
 func (UnimplementedTaskServiceServer) testEmbeddedByValue()                     {}
@@ -87,7 +88,7 @@ func RegisterTaskServiceServer(s grpc.ServiceRegistrar, srv TaskServiceServer) {
 }
 
 func _TaskService_SendTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Task)
+	in := new(SendTaskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -99,7 +100,7 @@ func _TaskService_SendTask_Handler(srv interface{}, ctx context.Context, dec fun
 		FullMethod: TaskService_SendTask_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TaskServiceServer).SendTask(ctx, req.(*Task))
+		return srv.(TaskServiceServer).SendTask(ctx, req.(*SendTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -117,5 +118,5 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/task_service.proto",
+	Metadata: "task_service.proto",
 }

@@ -2,11 +2,12 @@
 // versions:
 // 	protoc-gen-go v1.36.7
 // 	protoc        v6.30.2
-// source: api/task_service.proto
+// source: task_service.proto
 
 package taskpb
 
 import (
+	status "google.golang.org/genproto/googleapis/rpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -21,28 +22,28 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type SendTaskResponse struct {
+type SendTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SendTaskResponse) Reset() {
-	*x = SendTaskResponse{}
-	mi := &file_api_task_service_proto_msgTypes[0]
+func (x *SendTaskRequest) Reset() {
+	*x = SendTaskRequest{}
+	mi := &file_task_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SendTaskResponse) String() string {
+func (x *SendTaskRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendTaskResponse) ProtoMessage() {}
+func (*SendTaskRequest) ProtoMessage() {}
 
-func (x *SendTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_task_service_proto_msgTypes[0]
+func (x *SendTaskRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -53,77 +54,80 @@ func (x *SendTaskResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendTaskResponse.ProtoReflect.Descriptor instead.
-func (*SendTaskResponse) Descriptor() ([]byte, []int) {
-	return file_api_task_service_proto_rawDescGZIP(), []int{0}
+// Deprecated: Use SendTaskRequest.ProtoReflect.Descriptor instead.
+func (*SendTaskRequest) Descriptor() ([]byte, []int) {
+	return file_task_service_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *SendTaskResponse) GetOk() bool {
+func (x *SendTaskRequest) GetTask() *Task {
 	if x != nil {
-		return x.Ok
+		return x.Task
 	}
-	return false
+	return nil
 }
 
-var File_api_task_service_proto protoreflect.FileDescriptor
+var File_task_service_proto protoreflect.FileDescriptor
 
-const file_api_task_service_proto_rawDesc = "" +
+const file_task_service_proto_rawDesc = "" +
 	"\n" +
-	"\x16api/task_service.proto\x12\x04task\x1a\x0eapi/task.proto\"\"\n" +
-	"\x10SendTaskResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok2=\n" +
-	"\vTaskService\x12.\n" +
-	"\bSendTask\x12\n" +
-	".task.Task\x1a\x16.task.SendTaskResponseB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
+	"\x12task_service.proto\x12\x04task\x1a\x17google/rpc/status.proto\x1a\n" +
+	"task.proto\"1\n" +
+	"\x0fSendTaskRequest\x12\x1e\n" +
+	"\x04task\x18\x01 \x01(\v2\n" +
+	".task.TaskR\x04task2D\n" +
+	"\vTaskService\x125\n" +
+	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.StatusB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
 
 var (
-	file_api_task_service_proto_rawDescOnce sync.Once
-	file_api_task_service_proto_rawDescData []byte
+	file_task_service_proto_rawDescOnce sync.Once
+	file_task_service_proto_rawDescData []byte
 )
 
-func file_api_task_service_proto_rawDescGZIP() []byte {
-	file_api_task_service_proto_rawDescOnce.Do(func() {
-		file_api_task_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_task_service_proto_rawDesc), len(file_api_task_service_proto_rawDesc)))
+func file_task_service_proto_rawDescGZIP() []byte {
+	file_task_service_proto_rawDescOnce.Do(func() {
+		file_task_service_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_task_service_proto_rawDesc), len(file_task_service_proto_rawDesc)))
 	})
-	return file_api_task_service_proto_rawDescData
+	return file_task_service_proto_rawDescData
 }
 
-var file_api_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_api_task_service_proto_goTypes = []any{
-	(*SendTaskResponse)(nil), // 0: task.SendTaskResponse
-	(*Task)(nil),             // 1: task.Task
+var file_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_task_service_proto_goTypes = []any{
+	(*SendTaskRequest)(nil), // 0: task.SendTaskRequest
+	(*Task)(nil),            // 1: task.Task
+	(*status.Status)(nil),   // 2: google.rpc.Status
 }
-var file_api_task_service_proto_depIdxs = []int32{
-	1, // 0: task.TaskService.SendTask:input_type -> task.Task
-	0, // 1: task.TaskService.SendTask:output_type -> task.SendTaskResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+var file_task_service_proto_depIdxs = []int32{
+	1, // 0: task.SendTaskRequest.task:type_name -> task.Task
+	0, // 1: task.TaskService.SendTask:input_type -> task.SendTaskRequest
+	2, // 2: task.TaskService.SendTask:output_type -> google.rpc.Status
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_api_task_service_proto_init() }
-func file_api_task_service_proto_init() {
-	if File_api_task_service_proto != nil {
+func init() { file_task_service_proto_init() }
+func file_task_service_proto_init() {
+	if File_task_service_proto != nil {
 		return
 	}
-	file_api_task_proto_init()
+	file_task_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_task_service_proto_rawDesc), len(file_api_task_service_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_task_service_proto_rawDesc), len(file_task_service_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_api_task_service_proto_goTypes,
-		DependencyIndexes: file_api_task_service_proto_depIdxs,
-		MessageInfos:      file_api_task_service_proto_msgTypes,
+		GoTypes:           file_task_service_proto_goTypes,
+		DependencyIndexes: file_task_service_proto_depIdxs,
+		MessageInfos:      file_task_service_proto_msgTypes,
 	}.Build()
-	File_api_task_service_proto = out.File
-	file_api_task_service_proto_goTypes = nil
-	file_api_task_service_proto_depIdxs = nil
+	File_task_service_proto = out.File
+	file_task_service_proto_goTypes = nil
+	file_task_service_proto_depIdxs = nil
 }

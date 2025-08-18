@@ -23,6 +23,7 @@ func startGRPCServer(ctx context.Context) {
 	// start the grpc server
 	grpcServer := grpc.NewServer()
 	taskpb.RegisterTaskServiceServer(grpcServer, handlers.TaskServer{})
+
 	// start serving to the address
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
