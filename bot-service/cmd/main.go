@@ -13,8 +13,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 func connectionWithTelegram() *tgbotapi.BotAPI {
@@ -31,7 +29,8 @@ func connectionWithTelegram() *tgbotapi.BotAPI {
 	return bot
 }
 
-func startGRPCServer(ctx context.Context) {
+func startGRPCServer(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
 	// add a listener address
 	lis, err := net.Listen("tcp", ":50001")
 	if err != nil {
@@ -41,10 +40,10 @@ func startGRPCServer(ctx context.Context) {
 	// start the grpc server
 	grpcServer := grpc.NewServer()
 
-	// Register health service
-	healthServer := health.NewServer()
-	healthServer.SetServingStatus("task.TaskService", grpc_health_v1.HealthCheckResponse_SERVING)
-	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
+	// // Register health service
+	// healthServer := health.NewServer()
+	// healthServer.SetServingStatus("task.TaskService", grpc_health_v1.HealthCheckResponse_SERVING)
+	// grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
 
 	// start serving to the address
 	go func() {
@@ -63,11 +62,13 @@ func startGRPCServer(ctx context.Context) {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go startGRPCServer(ctx)
+	mainWG := sync.WaitGroup{}
+
+	mainWG.Add(1)
+	go startGRPCServer(ctx, &mainWG)
 
 	//Start bot
 	logrus.SetFormatter(new(logrus.JSONFormatter))
-	mainWG := sync.WaitGroup{}
 	semaphor := make(chan struct{}, 1000)
 
 	bot := connectionWithTelegram()

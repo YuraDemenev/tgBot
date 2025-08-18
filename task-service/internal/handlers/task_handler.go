@@ -12,7 +12,7 @@ type TaskServer struct {
 	taskpb.UnimplementedTaskServiceServer
 }
 
-func (t *TaskServer) sendTask(ctx context.Context, req *taskpb.SendTaskRequest) (*status.Status, error) {
+func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) (*status.Status, error) {
 	fmt.Printf("Got task: %+v\n", req)
 	//TODO change status
 	return &status.Status{}, nil

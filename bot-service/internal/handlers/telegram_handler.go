@@ -111,7 +111,6 @@ func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *se
 			if err := sendMessage(bot, str, chatId); err != nil {
 				//TODO добавить обработку
 			}
-
 			logrus.Errorf("handleStates, AddTask get error: %v", err)
 			return
 		}

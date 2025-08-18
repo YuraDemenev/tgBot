@@ -21,12 +21,12 @@ func SendTaskGRPC(userText string) error {
 		return err
 	}
 
-	err = healthCheck()
-	if err != nil {
-		return err
-	}
+	// err = healthCheck()
+	// if err != nil {
+	// 	return err
+	// }
 	// Create grpc connection to task-service
-	conn, err := grpc.NewClient("localhost:50002", grpc.WithInsecure())
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
 		return err
@@ -37,7 +37,7 @@ func SendTaskGRPC(userText string) error {
 
 	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task})
 	if err != nil {
-		logrus.Errorf("SendTaskGRPC, can`t send task err%v", err)
+		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
 	}
 	fmt.Println(resp)
 	return nil
@@ -94,19 +94,19 @@ func createTask(userText string) (*taskpb.Task, error) {
 
 func healthCheck() error {
 	//Prepare Health check
-	conn, err := grpc.NewClient("localhost:50001", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		logrus.Errorf("healthCheck can`t check health, err:%v", err)
+		logrus.Errorf("healthCheck can`t create new client, err:%v", err)
 		return err
 	}
 	defer conn.Close()
 	healthClient := grpc_health_v1.NewHealthClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	//Do health check
-	resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{Service: "task.TaskService"})
+	resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 	if err != nil {
 		logrus.Errorf("healthCheck, Health check failed : %v", err)
 		return err

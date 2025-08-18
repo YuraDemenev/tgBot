@@ -5,24 +5,33 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/handlers"
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
-func startGRPCServer(ctx context.Context) {
+func startGRPCServer(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
 	// add a listener address
 	lis, err := net.Listen("tcp", ":50002")
 	if err != nil {
 		logrus.Fatalf("ERROR STARTING THE SERVER : %v", err)
 	}
 
-	// start the grpc server
+	// create the grpc server
 	grpcServer := grpc.NewServer()
-	taskpb.RegisterTaskServiceServer(grpcServer, handlers.TaskServer{})
+	taskpb.RegisterTaskServiceServer(grpcServer, &handlers.TaskServer{})
+
+	// Register health service
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// start serving to the address
 	go func() {
@@ -41,7 +50,10 @@ func startGRPCServer(ctx context.Context) {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	startGRPCServer(ctx)
+	var mainWG sync.WaitGroup
+
+	mainWG.Add(1)
+	go startGRPCServer(ctx, &mainWG)
 	logrus.Info("Service task-service started grpc server")
 
 	//handle graceful shutdown signal
@@ -54,4 +66,5 @@ func main() {
 	}()
 
 	logrus.Info("Service task-service started")
+	mainWG.Wait()
 }
