@@ -25,6 +25,7 @@ const (
 type SendTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
+	UserName      string                 `protobuf:"bytes,2,opt,name=userName,proto3" json:"userName,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -66,15 +67,23 @@ func (x *SendTaskRequest) GetTask() *Task {
 	return nil
 }
 
+func (x *SendTaskRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
 var File_task_service_proto protoreflect.FileDescriptor
 
 const file_task_service_proto_rawDesc = "" +
 	"\n" +
 	"\x12task_service.proto\x12\x04task\x1a\x17google/rpc/status.proto\x1a\n" +
-	"task.proto\"1\n" +
+	"task.proto\"M\n" +
 	"\x0fSendTaskRequest\x12\x1e\n" +
 	"\x04task\x18\x01 \x01(\v2\n" +
-	".task.TaskR\x04task2D\n" +
+	".task.TaskR\x04task\x12\x1a\n" +
+	"\buserName\x18\x02 \x01(\tR\buserName2D\n" +
 	"\vTaskService\x125\n" +
 	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.StatusB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
 

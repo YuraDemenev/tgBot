@@ -15,7 +15,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func SendTaskGRPC(userText string) error {
+func SendTaskGRPC(userText string, userName string) error {
+	logrus.Infof("started SendTaskGRPC for user:%s", userName)
+
 	task, err := createTask(userText)
 	if err != nil {
 		return err
@@ -35,7 +37,7 @@ func SendTaskGRPC(userText string) error {
 
 	client := taskpb.NewTaskServiceClient(conn)
 
-	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task})
+	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName})
 	if err != nil {
 		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
 	}

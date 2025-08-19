@@ -12,7 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func sendMessage(bot *tgbotapi.BotAPI, msg string, chatId int64) error {
+func sendMessage(bot *tgbotapi.BotAPI, msg string, chatId int64, userName string) error {
+	logrus.Infof("send message to user: %s", userName)
+
 	msgConfig := tgbotapi.NewMessage(chatId, msg)
 	_, err := bot.Send(msgConfig)
 	if err != nil {
@@ -70,20 +72,25 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, sessionStorage *services.SessionStorage) {
 	switch text {
 	case "/start":
+		logrus.Infof("user: %s, started /start", userName)
 		str := fmt.Sprintf("Привет %s", userName)
-		if err := sendMessage(bot, str, chatId); err != nil {
+
+		if err := sendMessage(bot, str, chatId, userName); err != nil {
 			logrus.Errorf("handler commands, /start get error: %v", err)
 			return
 		}
 
 	case "/addTask":
+		logrus.Infof("user: %s, started /addTask", userName)
 		str := fmt.Sprintf(`%s чтобы добавить задачу опишите вашу задачу в формате:\n
 		Имя задачи, Описание, дата, время.
 		Пример:\n Поход к врачу, Сегодня в 15:00 запись к зубному, 25.08.2025, 12:00`, userName)
-		if err := sendMessage(bot, str, chatId); err != nil {
+
+		if err := sendMessage(bot, str, chatId, userName); err != nil {
 			logrus.Errorf("handler commands, /addTask get error: %v", err)
 			return
 		}
+
 		sessionStorage.StoreSession(userName, states.AddTask)
 
 	case "/deleteTask":
@@ -95,7 +102,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 
 	default:
 		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаю`, userName)
-		if err := sendMessage(bot, str, chatId); err != nil {
+		if err := sendMessage(bot, str, chatId, userName); err != nil {
 			//TODO добавить обработку
 		}
 	}
@@ -104,19 +111,24 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *services.SessionStorage, text, userName string, chatId int64) {
 	switch status {
 	case states.AddTask:
-		err := SendTaskGRPC(text)
+		logrus.Infof("user: %s, started addTask", userName)
+
+		err := SendTaskGRPC(text, userName)
 		if err != nil {
 			//Write message to user
 			str := fmt.Sprintf(`Извини %s, но кажется ты совершил ошибку, давай попробуем ещё раз. Напиши сообщение для выполнения комманды`, userName)
-			if err := sendMessage(bot, str, chatId); err != nil {
+			if err := sendMessage(bot, str, chatId, userName); err != nil {
 				//TODO добавить обработку
 			}
 			logrus.Errorf("handleStates, AddTask get error: %v", err)
 			return
 		}
 	case states.DeleteTask:
+		logrus.Infof("user: %s, started DeleteTask", userName)
 	case states.ChangeTask:
+		logrus.Infof("user: %s, started ChangeTask", userName)
 	case states.MyTasks:
+		logrus.Infof("user: %s, started MyTask", userName)
 	default:
 		logrus.Errorf("Uknown status: %v", status)
 		//Set zero value
