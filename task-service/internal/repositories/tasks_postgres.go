@@ -7,6 +7,7 @@ import (
 	"errors"
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/cache"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
@@ -39,7 +40,7 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) error {
 	if err != nil {
 		// If no such user add user
 		if errors.Is(err, sql.ErrNoRows) {
-			row = tx.QueryRow("INSERT INT users (user_name_hash, count_tasks) VALUES $1,$2 RETURNING id", userHash, 0)
+			row = tx.QueryRow("INSERT INTO users (user_name_hash) VALUES ($1) RETURNING id", userHash)
 			err = row.Scan(&userID)
 			if err != nil {
 				tx.Rollback()
@@ -56,16 +57,25 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) error {
 	}
 
 	// Add task
-	_, err = tx.Exec(`
+	var taskID int
+	date := time.Date(int(task.Date.Year), time.Month(task.Date.Month), int(task.Date.Day), 0, 0, 0, 0, time.UTC)
+	myTime := task.Time.AsTime()
+	row = tx.QueryRow(`
 		INSERT INTO tasks (user_id, task_name, description, date, time)
-		VALUES ($1, $2, $3, $4, $5)`,
-		userID, task.Name, task.Description, task.Date, task.Time)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id`,
+		userID, task.Name, task.Description, date, myTime)
 
+	err = row.Scan(&taskID)
 	if err != nil {
 		tx.Rollback()
 		logrus.Errorf("Can`t insert task userID:%d, err:%v", userID, err)
 		return err
 	}
+	tx.Commit()
+
+	//Set task to redis
+	t.cacheClient.SetTask(task, taskID)
 	return nil
 }
 

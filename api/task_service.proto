@@ -8,6 +8,7 @@ import "task.proto";
 
 service TaskService {
   rpc SendTask(SendTaskRequest) returns (google.rpc.Status);
+  rpc GetTasks (GetTasksRequest) returns (GetTasksResponse);
 }
 
 message SendTaskRequest {
@@ -15,6 +16,10 @@ message SendTaskRequest {
   string userName = 2;
 }
 
-message SendTaskResponse {
-  bool ok = 1;
+message GetTasksRequest {
+  string userName = 1;
+}
+
+message GetTasksResponse {
+  bool ok=1;
 }

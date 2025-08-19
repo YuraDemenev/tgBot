@@ -23,11 +23,12 @@ func SendTaskGRPC(userText string, userName string) error {
 		return err
 	}
 
+	//TODO Return health check
 	// Do health check
-	err = healthCheck()
-	if err != nil {
-		return err
-	}
+	// err = healthCheck()
+	// if err != nil {
+	// 	return err
+	// }
 	// Create grpc connection to task-service
 	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -42,8 +43,13 @@ func SendTaskGRPC(userText string, userName string) error {
 	if err != nil {
 		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
 	}
-	fmt.Println(resp)
+	//TODO empty resp
+	logrus.Info(resp)
 	return nil
+}
+
+func GetUserTasks(userName string) error {
+
 }
 
 func createTask(userText string) (*taskpb.Task, error) {

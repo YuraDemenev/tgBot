@@ -11,8 +11,6 @@ message MyDate {
   int32 year = 3;
 }
 
-//TODO change time
-
 message Task {
   string name = 1;
   string description = 2;  // Unique ID number for this person.

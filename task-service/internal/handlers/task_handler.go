@@ -26,8 +26,8 @@ func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) 
 	err := t.repo.SaveTask(req)
 	if err != nil {
 		logrus.Errorf("Can`t save task, user: %s", req.UserName)
-		return &status.Status{codes.Internal}, err
+		return &status.Status{Code: int32(codes.Internal)}, err
 	}
-	//TODO change status
-	return &status.Status{}, nil
+
+	return &status.Status{Code: int32(codes.OK)}, nil
 }

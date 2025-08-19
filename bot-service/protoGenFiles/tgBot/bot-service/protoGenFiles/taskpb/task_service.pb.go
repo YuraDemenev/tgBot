@@ -74,6 +74,94 @@ func (x *SendTaskRequest) GetUserName() string {
 	return ""
 }
 
+type GetTasksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserName      string                 `protobuf:"bytes,1,opt,name=userName,proto3" json:"userName,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTasksRequest) Reset() {
+	*x = GetTasksRequest{}
+	mi := &file_task_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTasksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTasksRequest) ProtoMessage() {}
+
+func (x *GetTasksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTasksRequest.ProtoReflect.Descriptor instead.
+func (*GetTasksRequest) Descriptor() ([]byte, []int) {
+	return file_task_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GetTasksRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+type GetTasksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTasksResponse) Reset() {
+	*x = GetTasksResponse{}
+	mi := &file_task_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTasksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTasksResponse) ProtoMessage() {}
+
+func (x *GetTasksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_task_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTasksResponse.ProtoReflect.Descriptor instead.
+func (*GetTasksResponse) Descriptor() ([]byte, []int) {
+	return file_task_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetTasksResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
 var File_task_service_proto protoreflect.FileDescriptor
 
 const file_task_service_proto_rawDesc = "" +
@@ -83,9 +171,14 @@ const file_task_service_proto_rawDesc = "" +
 	"\x0fSendTaskRequest\x12\x1e\n" +
 	"\x04task\x18\x01 \x01(\v2\n" +
 	".task.TaskR\x04task\x12\x1a\n" +
-	"\buserName\x18\x02 \x01(\tR\buserName2D\n" +
+	"\buserName\x18\x02 \x01(\tR\buserName\"-\n" +
+	"\x0fGetTasksRequest\x12\x1a\n" +
+	"\buserName\x18\x01 \x01(\tR\buserName\"\"\n" +
+	"\x10GetTasksResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok2\x7f\n" +
 	"\vTaskService\x125\n" +
-	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.StatusB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
+	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.Status\x129\n" +
+	"\bGetTasks\x12\x15.task.GetTasksRequest\x1a\x16.task.GetTasksResponseB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
 
 var (
 	file_task_service_proto_rawDescOnce sync.Once
@@ -99,18 +192,22 @@ func file_task_service_proto_rawDescGZIP() []byte {
 	return file_task_service_proto_rawDescData
 }
 
-var file_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_task_service_proto_goTypes = []any{
-	(*SendTaskRequest)(nil), // 0: task.SendTaskRequest
-	(*Task)(nil),            // 1: task.Task
-	(*status.Status)(nil),   // 2: google.rpc.Status
+	(*SendTaskRequest)(nil),  // 0: task.SendTaskRequest
+	(*GetTasksRequest)(nil),  // 1: task.GetTasksRequest
+	(*GetTasksResponse)(nil), // 2: task.GetTasksResponse
+	(*Task)(nil),             // 3: task.Task
+	(*status.Status)(nil),    // 4: google.rpc.Status
 }
 var file_task_service_proto_depIdxs = []int32{
-	1, // 0: task.SendTaskRequest.task:type_name -> task.Task
+	3, // 0: task.SendTaskRequest.task:type_name -> task.Task
 	0, // 1: task.TaskService.SendTask:input_type -> task.SendTaskRequest
-	2, // 2: task.TaskService.SendTask:output_type -> google.rpc.Status
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
+	1, // 2: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
+	4, // 3: task.TaskService.SendTask:output_type -> google.rpc.Status
+	2, // 4: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -128,7 +225,7 @@ func file_task_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_task_service_proto_rawDesc), len(file_task_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
