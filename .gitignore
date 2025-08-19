@@ -1,2 +1,4 @@
 .vscode/
 /api/google/
+/task-service/config/
+/task-service/internal/repositories/initDB.sql

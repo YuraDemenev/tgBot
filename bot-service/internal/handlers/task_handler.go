@@ -23,10 +23,11 @@ func SendTaskGRPC(userText string, userName string) error {
 		return err
 	}
 
-	// err = healthCheck()
-	// if err != nil {
-	// 	return err
-	// }
+	// Do health check
+	err = healthCheck()
+	if err != nil {
+		return err
+	}
 	// Create grpc connection to task-service
 	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -104,7 +105,7 @@ func healthCheck() error {
 	defer conn.Close()
 	healthClient := grpc_health_v1.NewHealthClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	//Do health check
@@ -115,7 +116,7 @@ func healthCheck() error {
 	}
 
 	if resp.Status == grpc_health_v1.HealthCheckResponse_SERVING {
-		logrus.Errorf("healthCheck, health resp got status: %s", resp.Status.String())
+		logrus.Infof("healthCheck, health resp got status: %s", resp.Status.String())
 		return nil
 	}
 
