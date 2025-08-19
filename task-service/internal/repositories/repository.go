@@ -1,12 +1,14 @@
 package repositories
 
 import (
+	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/cache"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type Tasks interface {
+	SaveTask(req *taskpb.SendTaskRequest) error
 }
 
 type Repository struct {

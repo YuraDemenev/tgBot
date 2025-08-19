@@ -14,3 +14,7 @@ message SendTaskRequest {
   Task task = 1;
   string userName = 2;
 }
+
+message SendTaskResponse {
+  bool ok = 1;
+}
