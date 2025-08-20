@@ -15,6 +15,7 @@ import (
 type Cache interface {
 	SetTask(task *taskpb.Task, taskID int)
 	GetTask(taskID int) *taskpb.Task
+	DeleteTask(taskID int)
 }
 
 // Реализация через Redis
@@ -71,4 +72,19 @@ func (r *RedisCache) GetTask(taskID int) *taskpb.Task {
 		return nil
 	}
 	return &task
+}
+
+func (r *RedisCache) DeleteTask(taskID int) {
+	ctx := context.Background()
+
+	_, err := r.client.Del(ctx, strconv.Itoa(taskID)).Result()
+	if err == redis.Nil {
+		return
+	}
+	if err != nil {
+		logrus.Errorf("error in redis when delete task: %v", err)
+		return
+	}
+
+	return
 }

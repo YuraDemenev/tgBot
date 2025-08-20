@@ -27,25 +27,34 @@ func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
 	userHash := getUserHash(userName)
 	tx, err := t.db.Begin()
 	if err != nil {
-		logrus.Errorf("can`t prepare for transaction err:%v", err)
+		logrus.Errorf("DeleteTask, can`t prepare for transaction err:%v", err)
+		return err
+	}
+	var taskID int
+
+	row := t.db.QueryRow(`
+		SELECT id FROM tasks
+		WHERE user_id = (SELECT id FROM users WHERE user_name_hash = $1)
+		ORDER BY id
+		OFFSET $2 LIMIT 1`, userHash, taskNum-1)
+
+	err = row.Scan(&taskID)
+	if err != nil {
+		logrus.Errorf("DeleteTask, Can`t scan id, err:%v", err)
 		return err
 	}
 
 	_, err = tx.Exec(`
 		DELETE FROM tasks
-		WHERE id = (
-		SELECT id FROM tasks
-		WHERE user_id = (SELECT id FROM users WHERE user_name_hash = $1)
-		ORDER BY id
-		OFFSET $2 LIMIT 1
-		);`, userHash, taskNum)
+		WHERE id = $1;`, taskID)
 	if err != nil {
-		logrus.Errorf("can`t delete task:%s, err:%v", taskNum, err)
+		logrus.Errorf("DeleteTask, can`t delete task:%s, err:%v", taskNum, err)
 		tx.Rollback()
 		return err
 	}
 
 	tx.Commit()
+	t.cacheClient.DeleteTask(taskID)
 	return nil
 }
 

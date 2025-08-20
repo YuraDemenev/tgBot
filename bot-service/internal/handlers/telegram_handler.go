@@ -199,7 +199,8 @@ func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *se
 			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}
-		logrus.Errorf("handleStates, AddTask get error: %v", err)
+
+		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 
 	case states.ChangeTask:
 		logrus.Infof("user: %s, started ChangeTask", userName)
