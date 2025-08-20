@@ -54,22 +54,42 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	userHash := getUserHash(req.UserName)
 	userTasks := make([]taskpb.Task, 0)
 
-	rows, err := t.db.Query(`SELECT t.task_name,t.description,t.date,t.time
+	//Get ids
+	rows, err := t.db.Query(`SELECT t.id
 	FROM tasks as t
 	JOIN users u on u.id = t.user_id
 	WHERE u.user_name_hash = $1;
 	`, userHash)
+
 	if err != nil {
 		logrus.Errorf("GetTasks, can`t query err:%v", err)
 		return nil, err
 	}
-	i := 0
 	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			logrus.Errorf("GetTasks, can`t scan id, err:%v", err)
+			return nil, err
+		}
+
+		//Check Redis for task
+		redisTask := t.cacheClient.GetTask(id)
+		if redisTask != nil {
+			userTasks = append(userTasks, *redisTask)
+			continue
+		}
+
+		//if no taks in redis get task by id
 		var task taskpb.Task
 		var date time.Time
 		var myTime time.Time
 
-		if err := rows.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
+		taskRow, err := t.db.Query("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id = $1", id)
+		if err != nil {
+			logrus.Errorf("GetTasks, can`t get task err:%v", err)
+			return nil, err
+		}
+		if err := taskRow.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
 			logrus.Errorf("GetTasks, can`t scan task:%v", err)
 			return nil, err
 		}
@@ -79,9 +99,7 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 			Year:  int32(date.Year()),
 		}
 		task.Time = timestamppb.New(myTime)
-
 		userTasks = append(userTasks, task)
-		i++
 	}
 
 	return userTasks, nil

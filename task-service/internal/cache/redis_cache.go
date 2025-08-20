@@ -14,6 +14,7 @@ import (
 // Интерфейс для кэша
 type Cache interface {
 	SetTask(task *taskpb.Task, taskID int)
+	GetTask(taskID int) *taskpb.Task
 }
 
 // Реализация через Redis
@@ -49,4 +50,25 @@ func (r *RedisCache) SetTask(task *taskpb.Task, taskID int) {
 		logrus.Errorf("SetTask, redis can`t save task, taskID:%d, task:%v, err:%v", taskID, task, err)
 		return
 	}
+}
+
+func (r *RedisCache) GetTask(taskID int) *taskpb.Task {
+	ctx := context.Background()
+
+	res, err := r.client.Get(ctx, strconv.Itoa(taskID)).Result()
+	if err == redis.Nil {
+		return nil
+	}
+	if err != nil {
+		logrus.Errorf("error in redis when get task: %v", err)
+		return nil
+	}
+
+	var task taskpb.Task
+	err = proto.Unmarshal([]byte(res), &task)
+	if err != nil {
+		logrus.Errorf("error in redis when unmarshal task: %v", err)
+		return nil
+	}
+	return &task
 }
