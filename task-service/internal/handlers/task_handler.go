@@ -55,3 +55,22 @@ func (t *TaskServer) GetTasks(ctx context.Context, req *taskpb.GetTasksRequest) 
 	}
 	return res, nil
 }
+
+func (t *TaskServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskRequest) (*taskpb.DeleteTaskResponse, error) {
+	logrus.Info("user %s, start delete task%s", req.UserName, req.TaskNumber)
+	err := t.repo.DeleteTask(req.UserName, int(req.TaskNumber))
+	if err != nil {
+		logrus.Errorf("user%s can`t delete task, err:%v", req.UserName, err)
+		res := &taskpb.DeleteTaskResponse{
+			Ok:     false,
+			Status: &status.Status{Code: int32(codes.Internal)},
+		}
+		return res, err
+	}
+
+	res := &taskpb.DeleteTaskResponse{
+		Ok:     true,
+		Status: &status.Status{Code: int32(codes.OK)},
+	}
+	return res, nil
+}

@@ -23,6 +23,32 @@ func NewTasksPostgres(db *sqlx.DB, cache cache.Cache) Tasks {
 	return &TasksPostgres{db: db, cacheClient: cache}
 }
 
+func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
+	userHash := getUserHash(userName)
+	tx, err := t.db.Begin()
+	if err != nil {
+		logrus.Errorf("can`t prepare for transaction err:%v", err)
+		return err
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM tasks
+		WHERE id = (
+		SELECT id FROM tasks
+		WHERE user_id = (SELECT id FROM users WHERE user_name_hash = $1)
+		ORDER BY id
+		OFFSET $2 LIMIT 1
+		);`, userHash, taskNum)
+	if err != nil {
+		logrus.Errorf("can`t delete task:%s, err:%v", taskNum, err)
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
+}
+
 func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, error) {
 	logrus.Infof("Start get tasks for user: %s", req.UserName)
 	userHash := getUserHash(req.UserName)

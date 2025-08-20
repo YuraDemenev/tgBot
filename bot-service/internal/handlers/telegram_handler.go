@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -97,6 +98,13 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 		logrus.Infof("user: %s, started /deleteTask", userName)
 		sessionStorage.StoreSession(userName, states.DeleteTask)
 
+		str := fmt.Sprintf(`%s чтобы удалить задачу напиши номер задачи (просто цифрой, например 6), которую хотите удалить. 
+		Номер можно получить из списка задач по команде /myTasks`, userName)
+		if err := sendMessage(bot, str, chatId, userName); err != nil {
+			logrus.Errorf("handler commands, /addTask can`t send message, error: %v", err)
+			return
+		}
+
 	case "/changeTask":
 		logrus.Infof("user: %s, started /changeTask", userName)
 		sessionStorage.StoreSession(userName, states.ChangeTask)
@@ -113,8 +121,8 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 		var builder strings.Builder
 		for i, v := range tasks {
 			builder.Write([]byte(fmt.Sprintf("Задача №%d\n", i+1)))
-			builder.Write([]byte(v.Name + "\n"))
-			builder.Write([]byte(v.Description + "\n"))
+			builder.Write([]byte("Имя задачи: " + v.Name + "\n"))
+			builder.Write([]byte("Описание: " + v.Description + "\n"))
 			builder.Write([]byte(fmt.Sprintf("Дата: %02d.%02d.%04d\n", v.Date.Day, v.Date.Month, v.Date.Year)))
 			builder.Write([]byte("время: " + v.Time.AsTime().Format("15:04") + "\n\n"))
 		}
@@ -161,6 +169,38 @@ func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *se
 
 	case states.DeleteTask:
 		logrus.Infof("user: %s, started DeleteTask", userName)
+		num, err := strconv.Atoi(text)
+		if err != nil {
+			str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
+			Напиши номер задачи (например 6), которую ты хочешь удалить`, userName)
+			if err := sendMessage(bot, str, chatId, userName); err != nil {
+				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+				return
+			}
+			logrus.Errorf("handleStates, AddTask get error: %v", err)
+			return
+		}
+
+		err = DeleteUserTasks(userName, num)
+		if err != nil {
+			//Write message to user
+			str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
+			Напиши номер задачи (например 6), которую ты хочешь удалить`)
+			if err := sendMessage(bot, str, chatId, userName); err != nil {
+				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+				return
+			}
+			logrus.Errorf("handleStates, AddTask get error: %v", err)
+			return
+		}
+
+		str := fmt.Sprintf(`Сообщение под номером %d было успешно удалено`, num)
+		if err := sendMessage(bot, str, chatId, userName); err != nil {
+			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+			return
+		}
+		logrus.Errorf("handleStates, AddTask get error: %v", err)
+
 	case states.ChangeTask:
 		logrus.Infof("user: %s, started ChangeTask", userName)
 	case states.MyTasks:

@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	TaskService_SendTask_FullMethodName = "/task.TaskService/SendTask"
-	TaskService_GetTasks_FullMethodName = "/task.TaskService/GetTasks"
+	TaskService_SendTask_FullMethodName   = "/task.TaskService/SendTask"
+	TaskService_GetTasks_FullMethodName   = "/task.TaskService/GetTasks"
+	TaskService_DeleteTask_FullMethodName = "/task.TaskService/DeleteTask"
 )
 
 // TaskServiceClient is the client API for TaskService service.
@@ -30,6 +31,7 @@ const (
 type TaskServiceClient interface {
 	SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*status.Status, error)
 	GetTasks(ctx context.Context, in *GetTasksRequest, opts ...grpc.CallOption) (*GetTasksResponse, error)
+	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*DeleteTaskResponse, error)
 }
 
 type taskServiceClient struct {
@@ -60,12 +62,23 @@ func (c *taskServiceClient) GetTasks(ctx context.Context, in *GetTasksRequest, o
 	return out, nil
 }
 
+func (c *taskServiceClient) DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*DeleteTaskResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteTaskResponse)
+	err := c.cc.Invoke(ctx, TaskService_DeleteTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TaskServiceServer is the server API for TaskService service.
 // All implementations must embed UnimplementedTaskServiceServer
 // for forward compatibility.
 type TaskServiceServer interface {
 	SendTask(context.Context, *SendTaskRequest) (*status.Status, error)
 	GetTasks(context.Context, *GetTasksRequest) (*GetTasksResponse, error)
+	DeleteTask(context.Context, *DeleteTaskRequest) (*DeleteTaskResponse, error)
 	mustEmbedUnimplementedTaskServiceServer()
 }
 
@@ -81,6 +94,9 @@ func (UnimplementedTaskServiceServer) SendTask(context.Context, *SendTaskRequest
 }
 func (UnimplementedTaskServiceServer) GetTasks(context.Context, *GetTasksRequest) (*GetTasksResponse, error) {
 	return nil, status1.Errorf(codes.Unimplemented, "method GetTasks not implemented")
+}
+func (UnimplementedTaskServiceServer) DeleteTask(context.Context, *DeleteTaskRequest) (*DeleteTaskResponse, error) {
+	return nil, status1.Errorf(codes.Unimplemented, "method DeleteTask not implemented")
 }
 func (UnimplementedTaskServiceServer) mustEmbedUnimplementedTaskServiceServer() {}
 func (UnimplementedTaskServiceServer) testEmbeddedByValue()                     {}
@@ -139,6 +155,24 @@ func _TaskService_GetTasks_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TaskService_DeleteTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TaskServiceServer).DeleteTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TaskService_DeleteTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TaskServiceServer).DeleteTask(ctx, req.(*DeleteTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TaskService_ServiceDesc is the grpc.ServiceDesc for TaskService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -153,6 +187,10 @@ var TaskService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTasks",
 			Handler:    _TaskService_GetTasks_Handler,
+		},
+		{
+			MethodName: "DeleteTask",
+			Handler:    _TaskService_DeleteTask_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

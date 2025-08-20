@@ -10,6 +10,7 @@ import (
 type Tasks interface {
 	SaveTask(req *taskpb.SendTaskRequest) error
 	GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, error)
+	DeleteTask(userName string, taskNum int) error
 }
 
 type Repository struct {

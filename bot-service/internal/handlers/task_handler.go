@@ -30,18 +30,17 @@ func SendTaskGRPC(userText string, userName string) error {
 	// 	return err
 	// }
 	// Create grpc connection to task-service
-	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client, conn, err := connectToTaskService()
 	if err != nil {
-		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
+		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
 		return err
 	}
 	defer conn.Close()
 
-	client := taskpb.NewTaskServiceClient(conn)
-
 	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName})
 	if err != nil {
 		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
+		return err
 	}
 	//TODO empty resp
 	logrus.Info(resp)
@@ -49,7 +48,7 @@ func SendTaskGRPC(userText string, userName string) error {
 }
 
 func GetUserTasks(userName string) ([]*taskpb.Task, error) {
-	logrus.Infof("started SendTaskGRPC for user:%s", userName)
+	logrus.Infof("started GetTasksGRPC for user:%s", userName)
 
 	//TODO Return health check
 	// Do health check
@@ -59,23 +58,49 @@ func GetUserTasks(userName string) ([]*taskpb.Task, error) {
 	// }
 
 	// Create grpc connection to task-service
-	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	client, conn, err := connectToTaskService()
 	if err != nil {
-		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
+		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
 		return nil, err
 	}
 	defer conn.Close()
 
-	client := taskpb.NewTaskServiceClient(conn)
-
 	//Do request
 	resp, err := client.GetTasks(context.Background(), &taskpb.GetTasksRequest{UserName: userName})
 	if err != nil {
-		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
+		logrus.Errorf("getTasksGRPC, can`t send task err: %v", err)
 		return nil, err
 	}
 
 	return resp.Task, nil
+}
+
+func DeleteUserTasks(userName string, taskNumber int) error {
+	logrus.Infof("started DeleteTaskGRPC for user:%s", userName)
+
+	//TODO Return health check
+	// Do health check
+	// err = healthCheck()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// Create grpc connection to task-service
+	client, conn, err := connectToTaskService()
+	if err != nil {
+		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
+		return err
+	}
+	defer conn.Close()
+
+	//Do request
+	resp, err := client.DeleteTask(context.Background(), &taskpb.DeleteTaskRequest{UserName: userName, TaskNumber: int64(taskNumber)})
+	if err != nil {
+		logrus.Errorf("getTasksGRPC, can`t send task grpc status: %v", resp.Status)
+		return err
+	}
+
+	return nil
 }
 
 func createTask(userText string) (*taskpb.Task, error) {
@@ -153,4 +178,16 @@ func healthCheck() error {
 	}
 
 	return fmt.Errorf("healthCheck, task-service not ready")
+}
+
+func connectToTaskService() (taskpb.TaskServiceClient, *grpc.ClientConn, error) {
+	// Create grpc connection to task-service
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logrus.Errorf("getTasksGRPC, failed to connect to task-service: %v", err)
+		return nil, nil, err
+	}
+
+	client := taskpb.NewTaskServiceClient(conn)
+	return client, conn, err
 }

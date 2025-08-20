@@ -9,13 +9,15 @@ import "task.proto";
 service TaskService {
   rpc SendTask(SendTaskRequest) returns (google.rpc.Status);
   rpc GetTasks (GetTasksRequest) returns (GetTasksResponse);
+  rpc DeleteTask (DeleteTaskRequest) returns (DeleteTaskResponse);
 }
-
+//SendTask
 message SendTaskRequest {
   Task task = 1;
   string userName = 2;
 }
 
+//GetTasks
 message GetTasksRequest {
   string userName = 1;
 }
@@ -23,4 +25,15 @@ message GetTasksRequest {
 message GetTasksResponse {
   bool ok=1;
   repeated Task task=2;
+}
+
+//DeleteTask
+message DeleteTaskRequest {
+  string userName=1;
+  int64 taskNumber=2;
+}
+
+message DeleteTaskResponse {
+  bool ok=1;
+  google.rpc.Status status=2;
 }
