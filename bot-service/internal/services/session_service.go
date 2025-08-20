@@ -23,14 +23,14 @@ func (s *SessionStorage) GetStatus(userName string) states.Status {
 	userHash := getUserHash(userName)
 	value, ok := s.hashTable.Load(userHash)
 	if !ok {
-		return states.GetZeroValue()
+		return states.GetDefaultValue()
 	}
 
 	session, ok := value.(session)
 	status := session.sessionAction
 	if !ok {
 		logrus.Errorf("Session Service, can`t convert value: %v to sesion", value)
-		return states.GetZeroValue()
+		return states.GetDefaultValue()
 	}
 
 	return status

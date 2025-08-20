@@ -121,6 +121,7 @@ func (x *GetTasksRequest) GetUserName() string {
 type GetTasksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Task          []*Task                `protobuf:"bytes,2,rep,name=task,proto3" json:"task,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -162,6 +163,13 @@ func (x *GetTasksResponse) GetOk() bool {
 	return false
 }
 
+func (x *GetTasksResponse) GetTask() []*Task {
+	if x != nil {
+		return x.Task
+	}
+	return nil
+}
+
 var File_task_service_proto protoreflect.FileDescriptor
 
 const file_task_service_proto_rawDesc = "" +
@@ -173,9 +181,11 @@ const file_task_service_proto_rawDesc = "" +
 	".task.TaskR\x04task\x12\x1a\n" +
 	"\buserName\x18\x02 \x01(\tR\buserName\"-\n" +
 	"\x0fGetTasksRequest\x12\x1a\n" +
-	"\buserName\x18\x01 \x01(\tR\buserName\"\"\n" +
+	"\buserName\x18\x01 \x01(\tR\buserName\"B\n" +
 	"\x10GetTasksResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok2\x7f\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1e\n" +
+	"\x04task\x18\x02 \x03(\v2\n" +
+	".task.TaskR\x04task2\x7f\n" +
 	"\vTaskService\x125\n" +
 	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.Status\x129\n" +
 	"\bGetTasks\x12\x15.task.GetTasksRequest\x1a\x16.task.GetTasksResponseB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
@@ -202,15 +212,16 @@ var file_task_service_proto_goTypes = []any{
 }
 var file_task_service_proto_depIdxs = []int32{
 	3, // 0: task.SendTaskRequest.task:type_name -> task.Task
-	0, // 1: task.TaskService.SendTask:input_type -> task.SendTaskRequest
-	1, // 2: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
-	4, // 3: task.TaskService.SendTask:output_type -> google.rpc.Status
-	2, // 4: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
-	3, // [3:5] is the sub-list for method output_type
-	1, // [1:3] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: task.GetTasksResponse.task:type_name -> task.Task
+	0, // 2: task.TaskService.SendTask:input_type -> task.SendTaskRequest
+	1, // 3: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
+	4, // 4: task.TaskService.SendTask:output_type -> google.rpc.Status
+	2, // 5: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_task_service_proto_init() }

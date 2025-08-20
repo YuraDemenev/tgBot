@@ -22,4 +22,5 @@ message GetTasksRequest {
 
 message GetTasksResponse {
   bool ok=1;
+  repeated Task task=2;
 }

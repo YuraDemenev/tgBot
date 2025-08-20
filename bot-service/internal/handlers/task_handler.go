@@ -48,8 +48,34 @@ func SendTaskGRPC(userText string, userName string) error {
 	return nil
 }
 
-func GetUserTasks(userName string) error {
+func GetUserTasks(userName string) ([]*taskpb.Task, error) {
+	logrus.Infof("started SendTaskGRPC for user:%s", userName)
 
+	//TODO Return health check
+	// Do health check
+	// err = healthCheck()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// Create grpc connection to task-service
+	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		logrus.Errorf("sendTaskGRPC, failed to connect to task-service: %v", err)
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := taskpb.NewTaskServiceClient(conn)
+
+	//Do request
+	resp, err := client.GetTasks(context.Background(), &taskpb.GetTasksRequest{UserName: userName})
+	if err != nil {
+		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
+		return nil, err
+	}
+
+	return resp.Task, nil
 }
 
 func createTask(userText string) (*taskpb.Task, error) {

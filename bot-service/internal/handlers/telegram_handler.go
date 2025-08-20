@@ -62,7 +62,7 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 	userName := update.Message.Chat.UserName
 
 	status := sessionStorage.GetStatus(userName)
-	if status == states.GetZeroValue() {
+	if status == states.GetDefaultValue() {
 		handleCommands(bot, chatId, text, userName, sessionStorage)
 	} else {
 		handleStates(bot, status, sessionStorage, text, userName, chatId)
@@ -94,12 +94,37 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 		sessionStorage.StoreSession(userName, states.AddTask)
 
 	case "/deleteTask":
+		logrus.Infof("user: %s, started /deleteTask", userName)
 		sessionStorage.StoreSession(userName, states.DeleteTask)
-	case "/changeTask":
-		sessionStorage.StoreSession(userName, states.ChangeTask)
-	case "/myTasks":
-		sessionStorage.StoreSession(userName, states.MyTasks)
 
+	case "/changeTask":
+		logrus.Infof("user: %s, started /changeTask", userName)
+		sessionStorage.StoreSession(userName, states.ChangeTask)
+
+	case "/myTasks":
+		logrus.Infof("user: %s, started /myTask", userName)
+		sessionStorage.StoreSession(userName, states.MyTasks)
+		tasks, err := GetUserTasks(userName)
+		if err != nil {
+			logrus.Errorf("user %s, did`t get tasks", userName)
+			return
+		}
+		logrus.Info("user %s, got his task", userName)
+		var builder strings.Builder
+		for i, v := range tasks {
+			builder.Write([]byte(fmt.Sprintf("Задача №%d\n", i+1)))
+			builder.Write([]byte(v.Name + "\n"))
+			builder.Write([]byte(v.Description + "\n"))
+			builder.Write([]byte(fmt.Sprintf("Дата: %02d.%02d.%04d\n", v.Date.Day, v.Date.Month, v.Date.Year)))
+			builder.Write([]byte("время: " + v.Time.AsTime().Format("15:04") + "\n\n"))
+		}
+
+		if err := sendMessage(bot, builder.String(), chatId, userName); err != nil {
+			logrus.Errorf("handler commands, /myTasks can`t send message, error: %v", err)
+			return
+		}
+
+		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 	default:
 		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаю`, userName)
 		if err := sendMessage(bot, str, chatId, userName); err != nil {
@@ -131,7 +156,7 @@ func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *se
 			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}
-		sessionStorage.StoreSession(userName, states.GetZeroValue())
+		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 		return
 
 	case states.DeleteTask:
@@ -144,6 +169,6 @@ func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *se
 	default:
 		logrus.Errorf("Uknown status: %v", status)
 		//Set zero value
-		sessionStorage.StoreSession(userName, states.GetZeroValue())
+		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 	}
 }

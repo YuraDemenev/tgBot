@@ -31,3 +31,27 @@ func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) 
 
 	return &status.Status{Code: int32(codes.OK)}, nil
 }
+
+func (t *TaskServer) GetTasks(ctx context.Context, req *taskpb.GetTasksRequest) (*taskpb.GetTasksResponse, error) {
+	logrus.Infof("user: %s, getting tasks", req.UserName)
+	tasks, err := t.repo.GetTasks(req)
+	if err != nil {
+		logrus.Errorf("Can`t get tasks, user: %s", req.UserName)
+		res := &taskpb.GetTasksResponse{
+			Ok:   false,
+			Task: nil,
+		}
+		return res, err
+	}
+
+	respTasks := make([]*taskpb.Task, 0, len(tasks))
+	for i := range tasks {
+		respTasks = append(respTasks, &tasks[i])
+	}
+
+	res := &taskpb.GetTasksResponse{
+		Ok:   true,
+		Task: respTasks,
+	}
+	return res, nil
+}

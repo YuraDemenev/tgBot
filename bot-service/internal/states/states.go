@@ -13,6 +13,6 @@ const (
 	MyTasks
 )
 
-func GetZeroValue() Status {
+func GetDefaultValue() Status {
 	return Unknown
 }

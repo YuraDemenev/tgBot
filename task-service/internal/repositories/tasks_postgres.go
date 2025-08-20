@@ -11,6 +11,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type TasksPostgres struct {
@@ -20,6 +21,44 @@ type TasksPostgres struct {
 
 func NewTasksPostgres(db *sqlx.DB, cache cache.Cache) Tasks {
 	return &TasksPostgres{db: db, cacheClient: cache}
+}
+
+func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, error) {
+	logrus.Infof("Start get tasks for user: %s", req.UserName)
+	userHash := getUserHash(req.UserName)
+	userTasks := make([]taskpb.Task, 0)
+
+	rows, err := t.db.Query(`SELECT t.task_name,t.description,t.date,t.time
+	FROM tasks as t
+	JOIN users u on u.id = t.user_id
+	WHERE u.user_name_hash = $1;
+	`, userHash)
+	if err != nil {
+		logrus.Errorf("GetTasks, can`t query err:%v", err)
+		return nil, err
+	}
+	i := 0
+	for rows.Next() {
+		var task taskpb.Task
+		var date time.Time
+		var myTime time.Time
+
+		if err := rows.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
+			logrus.Errorf("GetTasks, can`t scan task:%v", err)
+			return nil, err
+		}
+		task.Date = &taskpb.MyDate{
+			Day:   int32(date.Day()),
+			Month: int32(date.Month()),
+			Year:  int32(date.Year()),
+		}
+		task.Time = timestamppb.New(myTime)
+
+		userTasks = append(userTasks, task)
+		i++
+	}
+
+	return userTasks, nil
 }
 
 func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) error {
