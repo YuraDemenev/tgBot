@@ -67,15 +67,17 @@ func main() {
 	mainWG.Add(1)
 	go startGRPCServer(ctx, &mainWG)
 
-	//Start bot
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	semaphor := make(chan struct{}, 1000)
 
+	//Start bot
 	bot := connectionWithTelegram()
 	sessionStorage := services.CreateSessionStorage()
 
 	//Get config message chan
 	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 60
+	updateConfig.AllowedUpdates = []string{"message", "callback_query"}
 
 	//handle graceful shutdown signal
 	sigChan := make(chan os.Signal, 1)

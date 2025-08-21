@@ -74,3 +74,11 @@ func (t *TaskServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskReque
 	}
 	return res, nil
 }
+
+func (t *TaskServer) ChangeTask(ctx context.Context, req *taskpb.ChangeTaskRequest) (*taskpb.ChangeTaskResponse, error) {
+	//Check correct values
+	newValue := req.NewValue
+	switch req.ChangeValue {
+	case "":
+	}
+}

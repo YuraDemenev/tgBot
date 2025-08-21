@@ -10,6 +10,7 @@ service TaskService {
   rpc SendTask(SendTaskRequest) returns (google.rpc.Status);
   rpc GetTasks (GetTasksRequest) returns (GetTasksResponse);
   rpc DeleteTask (DeleteTaskRequest) returns (DeleteTaskResponse);
+  rpc ChangeTask (ChangeTaskRequest) returns (ChangeTaskResponse);
 }
 //SendTask
 message SendTaskRequest {
@@ -34,6 +35,19 @@ message DeleteTaskRequest {
 }
 
 message DeleteTaskResponse {
+  bool ok=1;
+  google.rpc.Status status=2;
+}
+
+//ChangeTask
+message ChangeTaskRequest{
+  string userName=1;
+  int64 taskNum=2;
+  string newValue=3;
+  string changeValue=4;
+}
+
+message ChangeTaskResponse{
   bool ok=1;
   google.rpc.Status status=2;
 }

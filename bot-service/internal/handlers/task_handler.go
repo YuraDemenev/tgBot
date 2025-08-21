@@ -50,13 +50,6 @@ func SendTaskGRPC(userText string, userName string) error {
 func GetUserTasks(userName string) ([]*taskpb.Task, error) {
 	logrus.Infof("started GetTasksGRPC for user:%s", userName)
 
-	//TODO Return health check
-	// Do health check
-	// err = healthCheck()
-	// if err != nil {
-	// 	return err
-	// }
-
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
@@ -75,20 +68,38 @@ func GetUserTasks(userName string) ([]*taskpb.Task, error) {
 	return resp.Task, nil
 }
 
-func DeleteUserTasks(userName string, taskNumber int) error {
-	logrus.Infof("started DeleteTaskGRPC for user:%s", userName)
-
-	//TODO Return health check
-	// Do health check
-	// err = healthCheck()
-	// if err != nil {
-	// 	return err
-	// }
+func ChangeTask(userName, newValue, changeValue string, taskNum int) error {
+	logrus.Infof("started GetTasksGRPC for user:%s", userName)
 
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
 		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
+		return err
+	}
+	defer conn.Close()
+
+	//Do request
+	resp, err := client.ChangeTask(context.Background(), &taskpb.ChangeTaskRequest{
+		UserName:    userName,
+		TaskNum:     int64(taskNum),
+		NewValue:    newValue,
+		ChangeValue: changeValue,
+	})
+	if err != nil {
+		logrus.Errorf("getTasksGRPC, can`t change task err: %v", err)
+		return err
+	}
+
+	return nil
+}
+
+func DeleteUserTasks(userName string, taskNumber int) error {
+	logrus.Infof("started DeleteTaskGRPC for user:%s", userName)
+
+	// Create grpc connection to task-service
+	client, conn, err := connectToTaskService()
+	if err != nil {
 		return err
 	}
 	defer conn.Close()
@@ -181,6 +192,14 @@ func healthCheck() error {
 }
 
 func connectToTaskService() (taskpb.TaskServiceClient, *grpc.ClientConn, error) {
+	//TODO Return health check
+	// Do health check
+	// err := healthCheck()
+	// if err != nil {
+	// 	logrus.Errorf("can`t do health check, err:%v", err)
+	// 	return nil, nil, err
+	// }
+
 	// Create grpc connection to task-service
 	conn, err := grpc.NewClient("localhost:50002", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {

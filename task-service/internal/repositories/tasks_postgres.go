@@ -93,11 +93,7 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 		var date time.Time
 		var myTime time.Time
 
-		taskRow, err := t.db.Query("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id = $1", id)
-		if err != nil {
-			logrus.Errorf("GetTasks, can`t get task err:%v", err)
-			return nil, err
-		}
+		taskRow := t.db.QueryRow("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id = $1", id)
 		if err := taskRow.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
 			logrus.Errorf("GetTasks, can`t scan task:%v", err)
 			return nil, err

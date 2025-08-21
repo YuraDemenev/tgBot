@@ -277,6 +277,127 @@ func (x *DeleteTaskResponse) GetStatus() *status.Status {
 	return nil
 }
 
+// ChangeTask
+type ChangeTaskRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserName      string                 `protobuf:"bytes,1,opt,name=userName,proto3" json:"userName,omitempty"`
+	TaskNum       int64                  `protobuf:"varint,2,opt,name=taskNum,proto3" json:"taskNum,omitempty"`
+	NewValue      string                 `protobuf:"bytes,3,opt,name=newValue,proto3" json:"newValue,omitempty"`
+	ChangeValue   string                 `protobuf:"bytes,4,opt,name=changeValue,proto3" json:"changeValue,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChangeTaskRequest) Reset() {
+	*x = ChangeTaskRequest{}
+	mi := &file_task_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangeTaskRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeTaskRequest) ProtoMessage() {}
+
+func (x *ChangeTaskRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_task_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeTaskRequest.ProtoReflect.Descriptor instead.
+func (*ChangeTaskRequest) Descriptor() ([]byte, []int) {
+	return file_task_service_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ChangeTaskRequest) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+func (x *ChangeTaskRequest) GetTaskNum() int64 {
+	if x != nil {
+		return x.TaskNum
+	}
+	return 0
+}
+
+func (x *ChangeTaskRequest) GetNewValue() string {
+	if x != nil {
+		return x.NewValue
+	}
+	return ""
+}
+
+func (x *ChangeTaskRequest) GetChangeValue() string {
+	if x != nil {
+		return x.ChangeValue
+	}
+	return ""
+}
+
+type ChangeTaskResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Status        *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChangeTaskResponse) Reset() {
+	*x = ChangeTaskResponse{}
+	mi := &file_task_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangeTaskResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeTaskResponse) ProtoMessage() {}
+
+func (x *ChangeTaskResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_task_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeTaskResponse.ProtoReflect.Descriptor instead.
+func (*ChangeTaskResponse) Descriptor() ([]byte, []int) {
+	return file_task_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ChangeTaskResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *ChangeTaskResponse) GetStatus() *status.Status {
+	if x != nil {
+		return x.Status
+	}
+	return nil
+}
+
 var File_task_service_proto protoreflect.FileDescriptor
 
 const file_task_service_proto_rawDesc = "" +
@@ -300,12 +421,22 @@ const file_task_service_proto_rawDesc = "" +
 	"taskNumber\"P\n" +
 	"\x12DeleteTaskResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12*\n" +
-	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status2\xc0\x01\n" +
+	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status\"\x87\x01\n" +
+	"\x11ChangeTaskRequest\x12\x1a\n" +
+	"\buserName\x18\x01 \x01(\tR\buserName\x12\x18\n" +
+	"\ataskNum\x18\x02 \x01(\x03R\ataskNum\x12\x1a\n" +
+	"\bnewValue\x18\x03 \x01(\tR\bnewValue\x12 \n" +
+	"\vchangeValue\x18\x04 \x01(\tR\vchangeValue\"P\n" +
+	"\x12ChangeTaskResponse\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12*\n" +
+	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status2\x81\x02\n" +
 	"\vTaskService\x125\n" +
 	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.Status\x129\n" +
 	"\bGetTasks\x12\x15.task.GetTasksRequest\x1a\x16.task.GetTasksResponse\x12?\n" +
 	"\n" +
-	"DeleteTask\x12\x17.task.DeleteTaskRequest\x1a\x18.task.DeleteTaskResponseB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
+	"DeleteTask\x12\x17.task.DeleteTaskRequest\x1a\x18.task.DeleteTaskResponse\x12?\n" +
+	"\n" +
+	"ChangeTask\x12\x17.task.ChangeTaskRequest\x1a\x18.task.ChangeTaskResponseB(Z&tgBot/bot-service/protoGenFiles/taskpbb\x06proto3"
 
 var (
 	file_task_service_proto_rawDescOnce sync.Once
@@ -319,31 +450,36 @@ func file_task_service_proto_rawDescGZIP() []byte {
 	return file_task_service_proto_rawDescData
 }
 
-var file_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_task_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_task_service_proto_goTypes = []any{
 	(*SendTaskRequest)(nil),    // 0: task.SendTaskRequest
 	(*GetTasksRequest)(nil),    // 1: task.GetTasksRequest
 	(*GetTasksResponse)(nil),   // 2: task.GetTasksResponse
 	(*DeleteTaskRequest)(nil),  // 3: task.DeleteTaskRequest
 	(*DeleteTaskResponse)(nil), // 4: task.DeleteTaskResponse
-	(*Task)(nil),               // 5: task.Task
-	(*status.Status)(nil),      // 6: google.rpc.Status
+	(*ChangeTaskRequest)(nil),  // 5: task.ChangeTaskRequest
+	(*ChangeTaskResponse)(nil), // 6: task.ChangeTaskResponse
+	(*Task)(nil),               // 7: task.Task
+	(*status.Status)(nil),      // 8: google.rpc.Status
 }
 var file_task_service_proto_depIdxs = []int32{
-	5, // 0: task.SendTaskRequest.task:type_name -> task.Task
-	5, // 1: task.GetTasksResponse.task:type_name -> task.Task
-	6, // 2: task.DeleteTaskResponse.status:type_name -> google.rpc.Status
-	0, // 3: task.TaskService.SendTask:input_type -> task.SendTaskRequest
-	1, // 4: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
-	3, // 5: task.TaskService.DeleteTask:input_type -> task.DeleteTaskRequest
-	6, // 6: task.TaskService.SendTask:output_type -> google.rpc.Status
-	2, // 7: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
-	4, // 8: task.TaskService.DeleteTask:output_type -> task.DeleteTaskResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	7, // 0: task.SendTaskRequest.task:type_name -> task.Task
+	7, // 1: task.GetTasksResponse.task:type_name -> task.Task
+	8, // 2: task.DeleteTaskResponse.status:type_name -> google.rpc.Status
+	8, // 3: task.ChangeTaskResponse.status:type_name -> google.rpc.Status
+	0, // 4: task.TaskService.SendTask:input_type -> task.SendTaskRequest
+	1, // 5: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
+	3, // 6: task.TaskService.DeleteTask:input_type -> task.DeleteTaskRequest
+	5, // 7: task.TaskService.ChangeTask:input_type -> task.ChangeTaskRequest
+	8, // 8: task.TaskService.SendTask:output_type -> google.rpc.Status
+	2, // 9: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
+	4, // 10: task.TaskService.DeleteTask:output_type -> task.DeleteTaskResponse
+	6, // 11: task.TaskService.ChangeTask:output_type -> task.ChangeTaskResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_task_service_proto_init() }
@@ -358,7 +494,7 @@ func file_task_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_task_service_proto_rawDesc), len(file_task_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

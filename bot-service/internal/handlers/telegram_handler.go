@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -13,10 +12,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func sendMessage(bot *tgbotapi.BotAPI, msg string, chatId int64, userName string) error {
+func sendMessage(bot *tgbotapi.BotAPI, msg string, chatID int64, userName string) error {
 	logrus.Infof("send message to user: %s", userName)
 
-	msgConfig := tgbotapi.NewMessage(chatId, msg)
+	msgConfig := tgbotapi.NewMessage(chatID, msg)
 	_, err := bot.Send(msgConfig)
 	if err != nil {
 		logrus.Errorf("Error sending message: %v", err)
@@ -32,8 +31,8 @@ func isMessageForBot(update *tgbotapi.Update) bool {
 	return true
 }
 
-func sendAnswer(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) error {
-	msg := tgbotapi.NewMessage(chatId, "answer")
+func sendAnswer(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatID int64) error {
+	msg := tgbotapi.NewMessage(chatID, "answer")
 	msg.ReplyToMessageID = update.Message.MessageID
 	_, err := bot.Send(msg)
 	if err != nil {
@@ -43,7 +42,7 @@ func sendAnswer(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) err
 	return nil
 }
 
-func addTask(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatId int64) {
+func addTask(bot *tgbotapi.BotAPI, update *tgbotapi.Update, chatID int64) {
 
 }
 
@@ -54,29 +53,39 @@ func HandlUpdate(bot *tgbotapi.BotAPI, update tgbotapi.Update, mainWg *sync.Wait
 	}()
 	defer mainWg.Done()
 
-	if update.Message == nil {
+	if update.Message == nil && update.CallbackQuery == nil {
 		return
 	}
 
-	text := update.Message.Text
-	chatId := update.Message.Chat.ID
-	userName := update.Message.Chat.UserName
+	var text string
+	var chatID int64
+	var userName string
+	if update.Message != nil {
+		text = update.Message.Text
+		chatID = update.Message.Chat.ID
+		userName = update.Message.Chat.UserName
+	} else {
+		text = ""
+		chatID = update.CallbackQuery.From.ID
+		userName = update.CallbackQuery.From.UserName
+	}
 
 	status := sessionStorage.GetStatus(userName)
 	if status == states.GetDefaultValue() {
-		handleCommands(bot, chatId, text, userName, sessionStorage)
+		handleCommands(bot, chatID, text, userName, sessionStorage, update)
 	} else {
-		handleStates(bot, status, sessionStorage, text, userName, chatId)
+		handleStates(bot, status, sessionStorage, text, userName, chatID, update)
 	}
 }
 
-func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, sessionStorage *services.SessionStorage) {
+func handleCommands(bot *tgbotapi.BotAPI, chatID int64, text, userName string,
+	sessionStorage *services.SessionStorage, update tgbotapi.Update) {
 	switch text {
 	case "/start":
 		logrus.Infof("user: %s, started /start", userName)
 		str := fmt.Sprintf("Привет %s", userName)
 
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
+		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handler commands, /start can`t send message, error: %v", err)
 			return
 		}
@@ -87,7 +96,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 		Имя задачи, Описание, дата, время уведомления.
 		Пример:\n Поход к врачу, Сегодня в 15:00 запись к зубному, 25.08.2025, 12:00`, userName)
 
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
+		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handler commands, /addTask can`t send message, error: %v", err)
 			return
 		}
@@ -100,13 +109,32 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 
 		str := fmt.Sprintf(`%s чтобы удалить задачу напиши номер задачи (просто цифрой, например 6), которую хотите удалить. 
 		Номер можно получить из списка задач по команде /myTasks`, userName)
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
+		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handler commands, /addTask can`t send message, error: %v", err)
 			return
 		}
 
 	case "/changeTask":
 		logrus.Infof("user: %s, started /changeTask", userName)
+		str := fmt.Sprintf(`
+		%s выбери поле, которое хочешь поменять`, userName)
+
+		msg := tgbotapi.NewMessage(chatID, str)
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Имя задачи", "Task Name"),
+				tgbotapi.NewInlineKeyboardButtonData("Описание", "Description"),
+				tgbotapi.NewInlineKeyboardButtonData("Дата", "Date"),
+				tgbotapi.NewInlineKeyboardButtonData("Время уведомления", "time"),
+			),
+		)
+
+		msg.ReplyMarkup = keyboard
+		_, err := bot.Send(msg)
+		if err != nil {
+			logrus.Errorf("changeTask, can`t send error: %v", err)
+		}
+
 		sessionStorage.StoreSession(userName, states.ChangeTask)
 
 	case "/myTasks":
@@ -127,7 +155,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 			builder.Write([]byte("время: " + v.Time.AsTime().Format("15:04") + "\n\n"))
 		}
 
-		if err := sendMessage(bot, builder.String(), chatId, userName); err != nil {
+		if err := sendMessage(bot, builder.String(), chatID, userName); err != nil {
 			logrus.Errorf("handler commands, /myTasks can`t send message, error: %v", err)
 			return
 		}
@@ -135,75 +163,24 @@ func handleCommands(bot *tgbotapi.BotAPI, chatId int64, text, userName string, s
 		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 	default:
 		str := fmt.Sprintf(`Извини %s, но я тебя не понимаю давай попробуем ещё раз. Напиши комманду которую я знаю`, userName)
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
+		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handler commands, default can`t send message, error: %v", err)
 			return
 		}
 	}
 }
 
-func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *services.SessionStorage, text, userName string, chatId int64) {
+func handleStates(bot *tgbotapi.BotAPI, status states.Status, sessionStorage *services.SessionStorage,
+	text, userName string, chatID int64, update tgbotapi.Update) {
 	switch status {
 	case states.AddTask:
-		logrus.Infof("user: %s, started addTask", userName)
-
-		err := SendTaskGRPC(text, userName)
-		if err != nil {
-			//Write message to user
-			str := fmt.Sprintf(`Извини %s, но кажется ты совершил ошибку, давай попробуем ещё раз. Напиши сообщение для выполнения комманды`, userName)
-			if err := sendMessage(bot, str, chatId, userName); err != nil {
-				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
-				return
-			}
-			logrus.Errorf("handleStates, AddTask get error: %v", err)
-			return
-		}
-		//write message to user
-		str := fmt.Sprint(`Твоя задача была успешно сохранена, я пришлю тебе уведомление в назначенное время`)
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
-			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
-			return
-		}
-		sessionStorage.StoreSession(userName, states.GetDefaultValue())
-		return
+		AddTaskHandler(text, userName, bot, chatID, sessionStorage)
 
 	case states.DeleteTask:
-		logrus.Infof("user: %s, started DeleteTask", userName)
-		num, err := strconv.Atoi(text)
-		if err != nil {
-			str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
-			Напиши номер задачи (например 6), которую ты хочешь удалить`, userName)
-			if err := sendMessage(bot, str, chatId, userName); err != nil {
-				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
-				return
-			}
-			logrus.Errorf("handleStates, AddTask get error: %v", err)
-			return
-		}
-
-		err = DeleteUserTasks(userName, num)
-		if err != nil {
-			//Write message to user
-			str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
-			Напиши номер задачи (например 6), которую ты хочешь удалить`)
-			if err := sendMessage(bot, str, chatId, userName); err != nil {
-				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
-				return
-			}
-			logrus.Errorf("handleStates, AddTask get error: %v", err)
-			return
-		}
-
-		str := fmt.Sprintf(`Сообщение под номером %d было успешно удалено`, num)
-		if err := sendMessage(bot, str, chatId, userName); err != nil {
-			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
-			return
-		}
-
-		sessionStorage.StoreSession(userName, states.GetDefaultValue())
+		DeleteTaskHandler(text, userName, bot, chatID, sessionStorage)
 
 	case states.ChangeTask:
-		logrus.Infof("user: %s, started ChangeTask", userName)
+		ChangeTaskHandler(text, userName, bot, chatID, sessionStorage, update)
 	case states.MyTasks:
 		logrus.Infof("user: %s, started MyTask", userName)
 
