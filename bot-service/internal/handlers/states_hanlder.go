@@ -75,16 +75,22 @@ func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 	sessionStorage *services.SessionStorage, update tgbotapi.Update) {
 	logrus.Infof("user: %s, started ChangeTask", userName)
 
-	if update.CallbackQuery != nil {
+	if update.CallbackQuery != nil && update.Message == nil {
 		str := fmt.Sprintf(`%s напиши номер задачи, которую ты хочешь поменять (просто цифрой, например 6) и новое значение.
 		Пример: 2, Вечером забрать посылку с почты`, userName)
 		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
 			return
 		}
+		sessionStorage.SetMetaData(userName, update.CallbackQuery.Data)
 		return
 	}
 	if update.Message != nil {
+		if update.CallbackQuery != nil {
+			logrus.Info(update.CallbackQuery.Data)
+		}
+
+		// In arr save task num, new value
 		test := update.Message.Text
 		arr := strings.Split(test, ",")
 		if len(arr) != 2 {
@@ -100,7 +106,50 @@ func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 			arr[i] = strings.TrimSpace(v)
 		}
 
-		logrus.Info(test)
-		return
+		// After this part, after err or success result sessionStorage has to get defaultValue
+		defer sessionStorage.StoreSession(userName, states.GetDefaultValue())
+
+		//Get meta data from storage
+		changeValueMeta := sessionStorage.GetMetaData(userName)
+		if changeValueMeta == nil {
+			err := fmt.Errorf("handler commands, /ChangeTaskHandler can`t get meta change value from sessionStorage")
+			logrus.Errorf(err.Error())
+			str := fmt.Sprintf(`%s похоже, что что-то пошло не так, давай попробуем ещё раз, напиши мне команду`, userName)
+			if err := sendMessage(bot, str, chatID, userName); err != nil {
+				logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
+				return
+			}
+			return
+		}
+
+		//Convert meta data to string
+		changeValue, ok := changeValueMeta.(string)
+		if ok != true {
+			logrus.Error("handler commands, /ChangeTaskHandler can`t convert changeValueMeta to str")
+			str := fmt.Sprintf(`%s похоже, что что-то пошло не так, давай попробуем ещё раз, напиши мне команду`, userName)
+			if err := sendMessage(bot, str, chatID, userName); err != nil {
+				logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
+				return
+			}
+			return
+		}
+
+		//Get taskNum
+		taskNum, err := strconv.Atoi(arr[0])
+		if err != nil {
+			logrus.Errorf("handler commands, /ChangeTaskHandler can`t convert changeValueMeta to str, err:%v", err)
+			str := fmt.Sprintf(`%s похоже, что что-то пошло не так, давай попробуем ещё раз, напиши мне команду`, userName)
+			if err := sendMessage(bot, str, chatID, userName); err != nil {
+				logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
+				return
+			}
+			return
+		}
+
+		err = ChangeTask(userName, arr[1], changeValue, taskNum)
+		if err != nil {
+			logrus.Errorf("handler commands, /ChangeTaskHandler can`t change task, err%v", err)
+			return
+		}
 	}
 }

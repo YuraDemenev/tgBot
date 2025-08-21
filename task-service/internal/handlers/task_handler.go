@@ -76,9 +76,20 @@ func (t *TaskServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskReque
 }
 
 func (t *TaskServer) ChangeTask(ctx context.Context, req *taskpb.ChangeTaskRequest) (*taskpb.ChangeTaskResponse, error) {
-	//Check correct values
-	newValue := req.NewValue
-	switch req.ChangeValue {
-	case "":
+	logrus.Info("user %s, start change task%s", req.UserName, req.TaskNum)
+	err := t.repo.ChangeTask(req)
+	if err != nil {
+		logrus.Errorf("user%s can`t change task, err:%v", req.UserName, err)
+		res := &taskpb.ChangeTaskResponse{
+			Ok:     false,
+			Status: &status.Status{Code: int32(codes.Internal)},
+		}
+		return res, err
 	}
+
+	res := &taskpb.ChangeTaskResponse{
+		Ok:     true,
+		Status: &status.Status{Code: int32(codes.OK)},
+	}
+	return res, nil
 }

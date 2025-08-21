@@ -125,7 +125,7 @@ func handleCommands(bot *tgbotapi.BotAPI, chatID int64, text, userName string,
 				tgbotapi.NewInlineKeyboardButtonData("Имя задачи", "Task Name"),
 				tgbotapi.NewInlineKeyboardButtonData("Описание", "Description"),
 				tgbotapi.NewInlineKeyboardButtonData("Дата", "Date"),
-				tgbotapi.NewInlineKeyboardButtonData("Время уведомления", "time"),
+				tgbotapi.NewInlineKeyboardButtonData("Время уведомления", "Time"),
 			),
 		)
 

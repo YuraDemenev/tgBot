@@ -90,6 +90,7 @@ func ChangeTask(userName, newValue, changeValue string, taskNum int) error {
 		logrus.Errorf("getTasksGRPC, can`t change task err: %v", err)
 		return err
 	}
+	logrus.Info(resp)
 
 	return nil
 }
