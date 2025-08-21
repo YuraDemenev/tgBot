@@ -12,8 +12,6 @@ import (
 )
 
 func AddTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, sessionStorage *services.SessionStorage) {
-	logrus.Infof("user: %s, started addTask", userName)
-
 	err := SendTaskGRPC(text, userName)
 	if err != nil {
 		//Write message to user
@@ -36,7 +34,6 @@ func AddTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, s
 }
 
 func DeleteTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, sessionStorage *services.SessionStorage) {
-	logrus.Infof("user: %s, started DeleteTask", userName)
 	num, err := strconv.Atoi(text)
 	if err != nil {
 		str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
@@ -73,7 +70,6 @@ func DeleteTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 
 func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64,
 	sessionStorage *services.SessionStorage, update tgbotapi.Update) {
-	logrus.Infof("user: %s, started ChangeTask", userName)
 
 	if update.CallbackQuery != nil && update.Message == nil {
 		str := fmt.Sprintf(`%s напиши номер задачи, которую ты хочешь поменять (просто цифрой, например 6) и новое значение.
@@ -146,9 +142,17 @@ func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 			return
 		}
 
+		// Change task
 		err = ChangeTask(userName, arr[1], changeValue, taskNum)
 		if err != nil {
 			logrus.Errorf("handler commands, /ChangeTaskHandler can`t change task, err%v", err)
+			return
+		}
+
+		// Send message
+		str := fmt.Sprintf(`%s задача №%d, была успешно изменена`, userName, taskNum)
+		if err := sendMessage(bot, str, chatID, userName); err != nil {
+			logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
 			return
 		}
 	}

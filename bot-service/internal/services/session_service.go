@@ -30,7 +30,7 @@ func (s *SessionStorage) SetMetaData(userName string, metaData interface{}) {
 func (s *SessionStorage) GetMetaData(userName string) interface{} {
 	value, ok := s.hashTable.Load(getUserHash(userName))
 	if !ok {
-		logrus.Error(fmt.Errorf("can`t get valuer from redis"))
+		logrus.Error(fmt.Errorf("can`t get value from redis"))
 		return nil
 	}
 	session, ok := value.(session)
@@ -46,7 +46,7 @@ func (s *SessionStorage) GetStatus(userName string) states.Status {
 	userHash := getUserHash(userName)
 	value, ok := s.hashTable.Load(userHash)
 	if !ok {
-		logrus.Error(fmt.Errorf("can`t get valuer from redis"))
+		logrus.Info(fmt.Errorf("can`t get value from redis"))
 		return states.GetDefaultValue()
 	}
 
