@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -38,6 +39,7 @@ func (s *SessionStorage) GetMetaData(userName string) interface{} {
 		logrus.Errorf("Session Service, can`t convert value: %v to sesion", value)
 		return states.GetDefaultValue()
 	}
+
 	metaData := session.metaData
 	return metaData
 }
@@ -55,8 +57,8 @@ func (s *SessionStorage) GetStatus(userName string) states.Status {
 		logrus.Errorf("Session Service, can`t convert value: %v to sesion", value)
 		return states.GetDefaultValue()
 	}
-	status := session.sessionAction
 
+	status := session.sessionAction
 	return status
 }
 
@@ -66,8 +68,9 @@ func (s *SessionStorage) StoreSession(userName string, status states.Status) {
 	s.hashTable.Store(userHash, session)
 }
 
-func CreateSessionStorage() *SessionStorage {
+func CreateSessionStorage(ctx context.Context) *SessionStorage {
 	sessionStorage := SessionStorage{hashTable: sync.Map{}}
+	startWorkerPool(ctx, 2, &sessionStorage)
 	return &sessionStorage
 }
 
@@ -80,4 +83,33 @@ func getUserHash(userName string) string {
 	return hex.EncodeToString(h.Sum([]byte(salt)))
 }
 
-//TODO worker pool for clear storage
+func (s *SessionStorage) DeleteSession(userName string) {
+	s.hashTable.Delete(getUserHash(userName))
+}
+
+func startWorkerPool(ctx context.Context, countWorkers int, sessionStorage *SessionStorage) {
+	for i := 0; i < countWorkers; i++ {
+		go func(ctx context.Context, sessionStorage *SessionStorage) {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					sessionStorage.hashTable.Range(func(key, value any) bool {
+						session, ok := value.(session)
+						if !ok {
+							logrus.Errorf("workers pool, can`t convert value to session")
+							return false
+						}
+						if session.timeOut.Before(time.Now()) {
+							sessionStorage.DeleteSession(key.(string))
+						}
+
+						return true
+					})
+					time.Sleep(time.Second * 5)
+				}
+			}
+		}(ctx, sessionStorage)
+	}
+}
