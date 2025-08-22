@@ -72,7 +72,7 @@ func main() {
 
 	//Start bot
 	bot := connectionWithTelegram()
-	sessionStorage := services.CreateSessionStorage()
+	sessionStorage := services.CreateSessionStorage(ctx)
 
 	//Get config message chan
 	updateConfig := tgbotapi.NewUpdate(0)

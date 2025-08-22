@@ -153,7 +153,7 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	userTasks := make([]taskpb.Task, 0)
 
 	//Get ids
-	rows, err := t.db.Query(`SELECT t.id
+	rows, err := t.db.QueryRow(`SELECT t.id
 	FROM tasks as t
 	JOIN users u on u.id = t.user_id
 	WHERE u.user_name_hash = $1;

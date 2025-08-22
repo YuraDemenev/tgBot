@@ -16,6 +16,7 @@ type Cache interface {
 	SetTask(task *taskpb.Task, taskID int)
 	GetTask(taskID int) *taskpb.Task
 	DeleteTask(taskID int)
+	GetTasks(tasksID []int) ([]*taskpb.Task, []int)
 }
 
 // Реализация через Redis
@@ -87,4 +88,32 @@ func (r *RedisCache) DeleteTask(taskID int) {
 	}
 
 	return
+}
+
+func (r *RedisCache) GetTasks(tasksID []int) ([]*taskpb.Task, []int) {
+	ctx := context.Background()
+	tasksIDStrings := make([]string, len(tasksID))
+	missingTasks := make([]int, len(tasksID))
+	resultTask := make([]*taskpb.Task, 0)
+
+	for i, val := range tasksID {
+		tasksIDStrings[i] = strconv.Itoa(val)
+	}
+
+	vals := r.client.MGet(ctx, tasksIDStrings...)
+
+	for i, v := range vals.Args() {
+		if v == nil {
+			missingTasks = append(missingTasks, tasksID[i])
+		} else {
+			task, ok := v.(*taskpb.Task)
+			if !ok {
+				logrus.Errorf("redsi GetTasks, can`t convert value to task")
+				continue
+			}
+			resultTask = append(resultTask, task)
+		}
+	}
+
+	return resultTask, missingTasks
 }
