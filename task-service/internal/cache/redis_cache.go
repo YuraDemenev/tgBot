@@ -16,7 +16,7 @@ type Cache interface {
 	SetTask(task *taskpb.Task, taskID int)
 	GetTask(taskID int) *taskpb.Task
 	DeleteTask(taskID int)
-	GetTasks(tasksID []int) ([]*taskpb.Task, []int)
+	GetTasks(tasksID []int) ([]*taskpb.Task, []int, error)
 }
 
 // Реализация через Redis
@@ -90,30 +90,42 @@ func (r *RedisCache) DeleteTask(taskID int) {
 	return
 }
 
-func (r *RedisCache) GetTasks(tasksID []int) ([]*taskpb.Task, []int) {
+func (r *RedisCache) GetTasks(tasksID []int) ([]*taskpb.Task, []int, error) {
 	ctx := context.Background()
 	tasksIDStrings := make([]string, len(tasksID))
-	missingTasks := make([]int, len(tasksID))
+	missingTasks := make([]int, 0, len(tasksID))
 	resultTask := make([]*taskpb.Task, 0)
 
 	for i, val := range tasksID {
 		tasksIDStrings[i] = strconv.Itoa(val)
 	}
 
-	vals := r.client.MGet(ctx, tasksIDStrings...)
+	vals, err := r.client.MGet(ctx, tasksIDStrings...).Result()
+	if err != nil {
+		logrus.Errorf("redis GetTasks, can`t do mget, err%v", err)
+		return nil, nil, err
+	}
 
-	for i, v := range vals.Args() {
+	for i, v := range vals {
 		if v == nil {
 			missingTasks = append(missingTasks, tasksID[i])
 		} else {
-			task, ok := v.(*taskpb.Task)
+			val, ok := v.(string)
 			if !ok {
-				logrus.Errorf("redsi GetTasks, can`t convert value to task")
+				logrus.Errorf("redis GetTasks, unexpected type for value: %T", v)
 				continue
 			}
-			resultTask = append(resultTask, task)
+			bytes := []byte(val)
+			var task taskpb.Task
+
+			if err := proto.Unmarshal(bytes, &task); err != nil {
+				logrus.Errorf("redis GetTasks, can`t convert value to task, err:%v", err)
+				missingTasks = append(missingTasks, tasksID[i])
+				continue
+			}
+			resultTask = append(resultTask, &task)
 		}
 	}
 
-	return resultTask, missingTasks
+	return resultTask, missingTasks, nil
 }

@@ -58,11 +58,13 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 			dateArrInt[i] = integer
 		}
 
+		//TODO добавить проверку даты
 		date := time.Date(dateArrInt[2], time.Month(dateArrInt[1]), dateArrInt[0], 0, 0, 0, 0, time.UTC)
 		args = append(args, date)
 		query = `UPDATE tasks SET date = $1 WHERE id=$2`
 
 	case "Time":
+		//TODO убрать проверку времени
 		parsedTime, err := time.Parse("15:04", newValueStr)
 		if err != nil {
 			logrus.Errorf("changeTask, can`t parse time:%s, err:%v", newValueStr, err)
@@ -153,40 +155,67 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	userTasks := make([]taskpb.Task, 0)
 
 	//Get ids
-	rows, err := t.db.QueryRow(`SELECT t.id
+	rows, err := t.db.Query(`SELECT t.id
 	FROM tasks as t
 	JOIN users u on u.id = t.user_id
 	WHERE u.user_name_hash = $1;
 	`, userHash)
-
 	if err != nil {
 		logrus.Errorf("getTasks, can`t query err:%v", err)
 		return nil, err
 	}
+	defer rows.Close()
+	ids := make([]int, 0)
+
 	for rows.Next() {
 		var id int
-		if err := rows.Scan(&id); err != nil {
-			logrus.Errorf("getTasks, can`t scan id, err:%v", err)
+		err := rows.Scan(&id)
+		if err != nil {
+			logrus.Errorf("getTasks, can`t scan err:%v", err)
 			return nil, err
 		}
+		ids = append(ids, id)
+	}
 
-		//Check Redis for task
-		redisTask := t.cacheClient.GetTask(id)
-		if redisTask != nil {
-			userTasks = append(userTasks, *redisTask)
-			continue
-		}
+	//Check Redis for task
+	redisTasks, missingTasks, err := t.cacheClient.GetTasks(ids)
+	if err != nil {
+		return nil, err
+	}
 
-		//if no taks in redis get task by id
+	for _, v := range redisTasks {
+		userTasks = append(userTasks, *v)
+	}
+
+	//Create query with in
+	query, args, err := sqlx.In("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id in (?)", missingTasks)
+	if err != nil {
+		logrus.Errorf("getTasks, can`t create query with in parametr, err%v", err)
+		return nil, err
+	}
+
+	query = t.db.Rebind(query)
+
+	rows, err = t.db.Query(query, args...)
+	if err != nil {
+		logrus.Errorf("getTasks, can`t create query err:%v", err)
+		return nil, err
+	}
+
+	//TODO нужно ли здесь defer?
+	//TODO проврить что будет если tasks 0
+	//Get other tasks from db
+	defer rows.Close()
+	for rows.Next() {
 		var task taskpb.Task
 		var date time.Time
 		var myTime time.Time
 
-		taskRow := t.db.QueryRow("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id = $1", id)
-		if err := taskRow.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
+		if err := rows.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
 			logrus.Errorf("getTasks, can`t scan task:%v", err)
 			return nil, err
 		}
+
 		task.Date = &taskpb.MyDate{
 			Day:   int32(date.Day()),
 			Month: int32(date.Month()),
