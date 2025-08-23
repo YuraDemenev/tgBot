@@ -49,6 +49,7 @@ func startGRPCServer(ctx context.Context, wg *sync.WaitGroup) {
 	go func() {
 		if err := grpcServer.Serve(lis); err != nil && err != grpc.ErrServerStopped {
 			logrus.Fatalf("grpcServer can't serve: %v", err)
+			return
 		}
 	}()
 

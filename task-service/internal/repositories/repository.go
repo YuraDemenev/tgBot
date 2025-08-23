@@ -3,6 +3,7 @@ package repositories
 import (
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/cache"
+	"tgbot/task-service/internal/rabbitmq"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -18,8 +19,8 @@ type Repository struct {
 	Tasks
 }
 
-func NewRepository(db *sqlx.DB, cache cache.Cache) *Repository {
+func NewRepository(db *sqlx.DB, cache cache.Cache, r *rabbitmq.RabbitMQ) *Repository {
 	return &Repository{
-		Tasks: NewTasksPostgres(db, cache),
+		Tasks: NewTasksPostgres(db, cache, r),
 	}
 }

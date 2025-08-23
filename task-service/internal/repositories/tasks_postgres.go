@@ -10,6 +10,7 @@ import (
 	"strings"
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/cache"
+	"tgbot/task-service/internal/rabbitmq"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -20,10 +21,11 @@ import (
 type TasksPostgres struct {
 	db          *sqlx.DB
 	cacheClient cache.Cache
+	r           *rabbitmq.RabbitMQ
 }
 
-func NewTasksPostgres(db *sqlx.DB, cache cache.Cache) Tasks {
-	return &TasksPostgres{db: db, cacheClient: cache}
+func NewTasksPostgres(db *sqlx.DB, cache cache.Cache, r *rabbitmq.RabbitMQ) Tasks {
+	return &TasksPostgres{db: db, cacheClient: cache, r: r}
 }
 
 func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
@@ -228,15 +230,20 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	return userTasks, nil
 }
 
-func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) error {
+func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (error, string) {
+	//TODO сделать проверку что время не более чем 2 месяца.
+	//TODO возвращать текст который вернётся user при ошибке
+
 	logrus.Infof("Start save task for user: %s", req.UserName)
+	errUserMessage := ""
 	task := req.Task
 	userHash := getUserHash(req.UserName)
 
 	tx, err := t.db.Begin()
 	if err != nil {
 		logrus.Errorf("can`t prepare for transaction err:%v", err)
-		return err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		return err, errUserMessage
 	}
 
 	var userID int
@@ -250,15 +257,17 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) error {
 			err = row.Scan(&userID)
 			if err != nil {
 				tx.Rollback()
+				errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
 				logrus.Errorf("Can`t scan userID, after add user:%s err:%v", req.UserName, err)
-				return err
+				return err, errUserMessage
 			}
 
 			// If user exist
 		} else {
 			tx.Rollback()
 			logrus.Errorf("Can`t scan userID, err:%v", err)
-			return err
+			errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+			return err, errUserMessage
 		}
 	}
 

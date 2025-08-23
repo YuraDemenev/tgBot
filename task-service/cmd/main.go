@@ -10,6 +10,7 @@ import (
 	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"tgbot/task-service/internal/cache"
 	"tgbot/task-service/internal/handlers"
+	"tgbot/task-service/internal/rabbitmq"
 	"tgbot/task-service/internal/repositories"
 
 	"github.com/sirupsen/logrus"
@@ -81,8 +82,14 @@ func main() {
 		DB:   viper.GetInt("redis.db"),
 	})
 
+	//Init rabbitMQ
+	r := rabbitmq.NewRabbitMQ("ampq://quest@localhost:5672/")
+	defer r.Close()
+
+	r.DeclareQueue("delayed-exchange", "notify-task-queue", "notify")
+
 	//init repository
-	repo := repositories.NewRepository(db, redisCache)
+	repo := repositories.NewRepository(db, redisCache, r)
 
 	//Start GRPC server
 	mainWG.Add(1)

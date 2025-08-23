@@ -32,6 +32,7 @@ require (
 
 require (
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/spf13/viper v1.20.1
 	golang.org/x/net v0.40.0 // indirect
