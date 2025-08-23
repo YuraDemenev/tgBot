@@ -15,6 +15,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -230,20 +232,20 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	return userTasks, nil
 }
 
-func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (error, string) {
-	//TODO сделать проверку что время не более чем 2 месяца.
-	//TODO возвращать текст который вернётся user при ошибке
-
+func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.Status, error) {
 	logrus.Infof("Start save task for user: %s", req.UserName)
 	errUserMessage := ""
+	status := &status.Status{}
+	// &status.Status{Code: int32(codes.OK)}
 	task := req.Task
 	userHash := getUserHash(req.UserName)
 
 	tx, err := t.db.Begin()
 	if err != nil {
-		logrus.Errorf("can`t prepare for transaction err:%v", err)
+		logrus.Errorf("SaveTask, can`t prepare for transaction err:%v", err)
 		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
-		return err, errUserMessage
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 
 	var userID int
@@ -258,22 +260,42 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (error, string) {
 			if err != nil {
 				tx.Rollback()
 				errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
-				logrus.Errorf("Can`t scan userID, after add user:%s err:%v", req.UserName, err)
-				return err, errUserMessage
+				status.Code = int32(codes.Internal)
+				logrus.Errorf("SaveTask, Can`t scan userID, after add user:%s err:%v", req.UserName, err)
+				return errUserMessage, status, err
 			}
 
 			// If user exist
 		} else {
 			tx.Rollback()
-			logrus.Errorf("Can`t scan userID, err:%v", err)
+			logrus.Errorf("SaveTask, Can`t scan userID, err:%v", err)
 			errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
-			return err, errUserMessage
+			status.Code = int32(codes.Internal)
+			return errUserMessage, status, err
 		}
 	}
 
 	// Add task
 	var taskID int
+	// Check time before
 	date := time.Date(int(task.Date.Year), time.Month(task.Date.Month), int(task.Date.Day), 0, 0, 0, 0, time.UTC)
+	if date.Before(time.Now()) {
+		err := fmt.Errorf("user date before time now")
+		logrus.Errorf("SaveTask, err:%v ", err)
+		errUserMessage = "Вы ввели дату, которая уже прошла, пожалуйста ввидете дату с будующим временем"
+		status.Code = int32(codes.InvalidArgument)
+		return errUserMessage, status, err
+	}
+
+	// Check time after
+	if date.After(time.Now().AddDate(0, 2, 0)) {
+		err := fmt.Errorf("user date after two months")
+		logrus.Errorf("SaveTask, err:%v ", err)
+		errUserMessage = "Вы ввели дату, которая превышает допустимый предел, пожалуйста ввидете дату максимум через 2 месяца"
+		status.Code = int32(codes.InvalidArgument)
+		return errUserMessage, status, err
+	}
+
 	myTime := task.Time.AsTime()
 	row = tx.QueryRow(`
 		INSERT INTO tasks (user_id, task_name, description, date, time)
@@ -284,15 +306,17 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (error, string) {
 	err = row.Scan(&taskID)
 	if err != nil {
 		tx.Rollback()
+		logrus.Errorf("SaveTask, Can`t insert task userID:%d, err:%v", userID, err)
 		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
-		logrus.Errorf("Can`t insert task userID:%d, err:%v", userID, err)
-		return err
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 	tx.Commit()
 
 	//Set task to redis
 	t.cacheClient.SetTask(task, taskID)
-	return nil
+	status.Code = int32(codes.OK)
+	return errUserMessage, status, nil
 }
 
 func getUserHash(userName string) string {

@@ -6,10 +6,11 @@ import (
 	"tgbot/task-service/internal/rabbitmq"
 
 	"github.com/jmoiron/sqlx"
+	"google.golang.org/genproto/googleapis/rpc/status"
 )
 
 type Tasks interface {
-	SaveTask(req *taskpb.SendTaskRequest) error
+	SaveTask(req *taskpb.SendTaskRequest) (string, *status.Status, error)
 	GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, error)
 	DeleteTask(userName string, taskNum int) error
 	ChangeTask(req *taskpb.ChangeTaskRequest) error

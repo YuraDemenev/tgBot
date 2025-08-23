@@ -21,15 +21,20 @@ func NewTaskServer(repo *repositories.Repository) *TaskServer {
 	}
 }
 
-func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) (*status.Status, error) {
+func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) (*taskpb.SendTaskResponse, error) {
 	logrus.Infof("user: %s, send task", req.UserName)
-	err := t.repo.SaveTask(req)
+	res := &taskpb.SendTaskResponse{}
+
+	errUserMessage, statusGRPC, err := t.repo.SaveTask(req)
 	if err != nil {
 		logrus.Errorf("Can`t save task, user: %s", req.UserName)
-		return &status.Status{Code: int32(codes.Internal)}, err
+		res.Status = statusGRPC
+		res.UserErrorMessage = errUserMessage
+		return res, err
 	}
-
-	return &status.Status{Code: int32(codes.OK)}, nil
+	res.Status = statusGRPC
+	res.UserErrorMessage = errUserMessage
+	return res, nil
 }
 
 func (t *TaskServer) GetTasks(ctx context.Context, req *taskpb.GetTasksRequest) (*taskpb.GetTasksResponse, error) {
