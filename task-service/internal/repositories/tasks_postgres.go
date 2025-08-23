@@ -284,6 +284,7 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (error, string) {
 	err = row.Scan(&taskID)
 	if err != nil {
 		tx.Rollback()
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
 		logrus.Errorf("Can`t insert task userID:%d, err:%v", userID, err)
 		return err
 	}
