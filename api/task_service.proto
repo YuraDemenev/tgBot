@@ -54,7 +54,7 @@ message ChangeTaskRequest{
 }
 
 message ChangeTaskResponse{
-  bool ok=1;
+  string userErrorMessage=1;
   google.rpc.Status status=2;
 }
 

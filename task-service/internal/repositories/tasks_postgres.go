@@ -30,11 +30,14 @@ func NewTasksPostgres(db *sqlx.DB, cache cache.Cache, r *rabbitmq.RabbitMQ) Task
 	return &TasksPostgres{db: db, cacheClient: cache, r: r}
 }
 
-func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
+func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) (string, *status.Status, error) {
 	//Check correct values
 	newValueStr := req.NewValue
+	errUserMessage := ""
+	status := &status.Status{}
 	var query string
 	args := make([]interface{}, 0, 2)
+
 	switch req.ChangeValue {
 	case "Task Name":
 		query = `UPDATE tasks SET task_name = $1 WHERE id=$2`
@@ -49,7 +52,9 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 		if len(dateArrStr) != 3 {
 			err := fmt.Errorf("changeTask, date does`t have 3 elements")
 			logrus.Errorf(err.Error())
-			return err
+			errUserMessage := "Вы ввели неверную дату, пожалуйста введите верное значение"
+			status.Code = int32(codes.InvalidArgument)
+			return errUserMessage, status, err
 		}
 
 		dateArrInt := make([]int, 3)
@@ -57,13 +62,40 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 			integer, err := strconv.Atoi(v)
 			if err != nil {
 				logrus.Errorf("changeTask, can`t conver date string:%s to int, err:%v", v, err)
-				return err
+				errUserMessage := "Вы ввели неверную дату, одно из значений не является чилсом, пожалуйста введите верное значение"
+				status.Code = int32(codes.InvalidArgument)
+				return errUserMessage, status, err
 			}
 			dateArrInt[i] = integer
 		}
 
 		//TODO добавить проверку даты
-		date := time.Date(dateArrInt[2], time.Month(dateArrInt[1]), dateArrInt[0], 0, 0, 0, 0, time.UTC)
+		date, err := validTime(dateArrInt[0], dateArrInt[1], dateArrInt[2])
+		if err != nil {
+			logrus.Errorf("changeTask, can`t create date, err:%v ", err)
+			errUserMessage = "Вы ввели неккоректную дату, пожалуйста напишите существующую дату"
+			status.Code = int32(codes.InvalidArgument)
+			return errUserMessage, status, err
+		}
+
+		// Check time before
+		if date.Before(time.Now()) {
+			err := fmt.Errorf("changeTask date before time now")
+			logrus.Errorf("SaveTask, err:%v", err)
+			errUserMessage = "Вы ввели дату, которая уже прошла, пожалуйста ввидете дату с будующим временем"
+			status.Code = int32(codes.InvalidArgument)
+			return errUserMessage, status, err
+		}
+
+		// Check time after
+		if date.After(time.Now().AddDate(0, 2, 0)) {
+			err := fmt.Errorf("user date after two months")
+			logrus.Errorf("changeTask, err:%v ", err)
+			errUserMessage = "Вы ввели дату, которая превышает допустимый предел, пожалуйста ввидете дату максимум через 2 месяца"
+			status.Code = int32(codes.InvalidArgument)
+			return errUserMessage, status, err
+		}
+
 		args = append(args, date)
 		query = `UPDATE tasks SET date = $1 WHERE id=$2`
 
@@ -72,25 +104,26 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 		parsedTime, err := time.Parse("15:04", newValueStr)
 		if err != nil {
 			logrus.Errorf("changeTask, can`t parse time:%s, err:%v", newValueStr, err)
-			return err
+			errUserMessage = "Вы ввели неккоректное время, пожалуйста напишите существующие время"
+			status.Code = int32(codes.InvalidArgument)
+			return errUserMessage, status, err
 		}
 
-		if parsedTime.Before(time.Now()) {
-			err = fmt.Errorf("changeTask, parsedTime %v is before current time %v", parsedTime, time.Now())
-			logrus.Errorf(err.Error())
-			return err
-		}
 		query = `UPDATE tasks SET time = $1 WHERE id = $2`
 		args = append(args, parsedTime)
 	default:
 		err := fmt.Errorf("changeTask, uknown change value %s", req.ChangeValue)
-		return err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 
 	tx, err := t.db.Begin()
 	if err != nil {
 		logrus.Errorf("changeTask, can`t prepare for transaction err:%v", err)
-		return err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 
 	var taskID int
@@ -103,7 +136,9 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 	err = row.Scan(&taskID)
 	if err != nil {
 		logrus.Errorf("changeTask, Can`t scan id, err:%v", err)
-		return err
+		errUserMessage = "Вы ввели неверный номер задачи, такой задачи у вас нет, введите пожалуйста корректный номер"
+		status.Code = int32(codes.NotFound)
+		return errUserMessage, status, err
 	}
 
 	args = append(args, taskID)
@@ -111,19 +146,26 @@ func (t *TasksPostgres) ChangeTask(req *taskpb.ChangeTaskRequest) error {
 	if err != nil {
 		logrus.Errorf("changeTask, Can`t make UPDATE query, err:%v", err)
 		tx.Rollback()
-		return err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 
 	tx.Commit()
-	return nil
+	return errUserMessage, status, nil
 }
 
-func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
+func (t *TasksPostgres) DeleteTask(userName string, taskNum int) (string, *status.Status, error) {
 	userHash := getUserHash(userName)
+	errUserMessage := ""
+	status := &status.Status{}
+
 	tx, err := t.db.Begin()
 	if err != nil {
 		logrus.Errorf("deleteTask, can`t prepare for transaction err:%v", err)
-		return err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
 	}
 	var taskID int
 
@@ -136,7 +178,9 @@ func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
 	err = row.Scan(&taskID)
 	if err != nil {
 		logrus.Errorf("deleteTask, Can`t scan id, err:%v", err)
-		return err
+		errUserMessage = "Вы ввели неверный номер задачи, такой задачи у вас нет, введите пожалуйста корректный номер"
+		status.Code = int32(codes.NotFound)
+		return errUserMessage, status, err
 	}
 
 	_, err = tx.Exec(`
@@ -144,13 +188,16 @@ func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
 		WHERE id = $1;`, taskID)
 	if err != nil {
 		logrus.Errorf("deleteTask, can`t delete task:%s, err:%v", taskNum, err)
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
 		tx.Rollback()
-		return err
+		return errUserMessage, status, err
 	}
 
 	tx.Commit()
 	t.cacheClient.DeleteTask(taskID)
-	return nil
+	status.Code = int32(codes.OK)
+	return errUserMessage, status, nil
 }
 
 func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) (string, *status.Status, []taskpb.Task, error) {

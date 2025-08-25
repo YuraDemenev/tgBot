@@ -19,7 +19,6 @@ func AddTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, s
 			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}
-		logrus.Errorf("handleStates, AddTask get error: %v", err)
 		return
 	}
 	//write message to user
@@ -45,16 +44,23 @@ func DeleteTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 		return
 	}
 
-	err = DeleteUserTasks(userName, num)
-	if err != nil {
-		//Write message to user
-		str := fmt.Sprintf(`Извини %s, но кажется ты написал не номер, давай попробуем ещё раз. 
-			Напиши номер задачи (например 6), которую ты хочешь удалить`)
+	if num <= 0 {
+		str := fmt.Sprintf(`Извини %s, но кажется ты написал не возможный номер, номера идут от 1 давай попробуем ещё раз. 
+			Напиши номер задачи (например 6), которую ты хочешь удалить`, userName)
 		if err := sendMessage(bot, str, chatID, userName); err != nil {
 			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}
-		logrus.Errorf("handleStates, AddTask get error: %v", err)
+		return
+	}
+
+	userErrorMessage, err := DeleteUserTasks(userName, num)
+	if err != nil {
+		//Write message to user
+		if err := sendMessage(bot, userErrorMessage, chatID, userName); err != nil {
+			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+			return
+		}
 		return
 	}
 
@@ -80,11 +86,8 @@ func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 		sessionStorage.SetMetaData(userName, update.CallbackQuery.Data)
 		return
 	}
-	if update.Message != nil {
-		if update.CallbackQuery != nil {
-			logrus.Info(update.CallbackQuery.Data)
-		}
 
+	if update.Message != nil {
 		// In arr save task num, new value
 		test := update.Message.Text
 		arr := strings.Split(test, ",")
@@ -140,19 +143,33 @@ func ChangeTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64
 			}
 			return
 		}
+		if taskNum <= 0 {
+			str := fmt.Sprintf(`Извини %s, но кажется ты написал не возможный номер, номера идут от 1 давай попробуем ещё раз. 
+			Напиши номер задачи (например 6), которую ты хочешь удалить`, userName)
+			if err := sendMessage(bot, str, chatID, userName); err != nil {
+				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+				return
+			}
+			return
+		}
 
 		// Change task
-		err = ChangeTask(userName, arr[1], changeValue, taskNum)
+		userErrorMessage, err := ChangeTask(userName, arr[1], changeValue, taskNum)
 		if err != nil {
-			logrus.Errorf("handler commands, /ChangeTaskHandler can`t change task, err%v", err)
+			//Write message to user
+			if err := sendMessage(bot, userErrorMessage, chatID, userName); err != nil {
+				logrus.Errorf("handlerStates, can`t send message, error: %v", err)
+				return
+			}
 			return
 		}
 
-		// Send message
-		str := fmt.Sprintf(`%s задача №%d, была успешно изменена`, userName, taskNum)
+		str := fmt.Sprintf(`Сообщение под номером %d было успешно измененно`, taskNum)
 		if err := sendMessage(bot, str, chatID, userName); err != nil {
-			logrus.Errorf("handler commands, /ChangeTaskHandler can`t send message, error: %v", err)
+			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}
+
+		sessionStorage.StoreSession(userName, states.GetDefaultValue())
 	}
 }

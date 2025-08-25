@@ -407,11 +407,11 @@ func (x *ChangeTaskRequest) GetChangeValue() string {
 }
 
 type ChangeTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	Status        *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	UserErrorMessage string                 `protobuf:"bytes,1,opt,name=userErrorMessage,proto3" json:"userErrorMessage,omitempty"`
+	Status           *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ChangeTaskResponse) Reset() {
@@ -444,11 +444,11 @@ func (*ChangeTaskResponse) Descriptor() ([]byte, []int) {
 	return file_task_service_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ChangeTaskResponse) GetOk() bool {
+func (x *ChangeTaskResponse) GetUserErrorMessage() string {
 	if x != nil {
-		return x.Ok
+		return x.UserErrorMessage
 	}
-	return false
+	return ""
 }
 
 func (x *ChangeTaskResponse) GetStatus() *status.Status {
@@ -490,9 +490,9 @@ const file_task_service_proto_rawDesc = "" +
 	"\buserName\x18\x01 \x01(\tR\buserName\x12\x18\n" +
 	"\ataskNum\x18\x02 \x01(\x03R\ataskNum\x12\x1a\n" +
 	"\bnewValue\x18\x03 \x01(\tR\bnewValue\x12 \n" +
-	"\vchangeValue\x18\x04 \x01(\tR\vchangeValue\"P\n" +
-	"\x12ChangeTaskResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12*\n" +
+	"\vchangeValue\x18\x04 \x01(\tR\vchangeValue\"l\n" +
+	"\x12ChangeTaskResponse\x12*\n" +
+	"\x10userErrorMessage\x18\x01 \x01(\tR\x10userErrorMessage\x12*\n" +
 	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status2\x85\x02\n" +
 	"\vTaskService\x129\n" +
 	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x16.task.SendTaskResponse\x129\n" +

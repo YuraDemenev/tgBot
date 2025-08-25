@@ -80,14 +80,14 @@ func GetUserTasks(userName string) (string, []*taskpb.Task, error) {
 	return "", resp.Task, nil
 }
 
-func ChangeTask(userName, newValue, changeValue string, taskNum int) error {
+func ChangeTask(userName, newValue, changeValue string, taskNum int) (string, error) {
 	logrus.Infof("started GetTasksGRPC for user:%s", userName)
 
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
 		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
-		return err
+		return "Извините, невозможно подключиться к серверу, попробуй позже", err
 	}
 	defer conn.Close()
 
@@ -98,33 +98,52 @@ func ChangeTask(userName, newValue, changeValue string, taskNum int) error {
 		NewValue:    newValue,
 		ChangeValue: changeValue,
 	})
+	// If network error
 	if err != nil {
-		logrus.Errorf("getTasksGRPC, can`t change task err: %v", err)
-		return err
+		st, _ := status.FromError(err)
+		logrus.Errorf("ChangeTask, can`t change task, err: %v, code:%v", st.Message(), st.Code())
+		return "Извините произошла непредвиденная ошибка, попробуйте позже", err
 	}
+
+	// If server error
+	if resp.Status.Code != int32(codes.OK) {
+		logrus.Errorf("ChangeTask, can`t chabge task, code %d", resp.Status.Code)
+		return resp.UserErrorMessage, fmt.Errorf(resp.Status.Message)
+	}
+
 	logrus.Info(resp)
 
-	return nil
+	return "", nil
 }
 
-func DeleteUserTasks(userName string, taskNumber int) error {
+func DeleteUserTasks(userName string, taskNumber int) (string, error) {
 	logrus.Infof("started DeleteTaskGRPC for user:%s", userName)
 
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
-		return err
+		return "Извините, невозможно подключиться к серверу, попробуй позже", err
 	}
 	defer conn.Close()
 
 	//Do request
 	resp, err := client.DeleteTask(context.Background(), &taskpb.DeleteTaskRequest{UserName: userName, TaskNumber: int64(taskNumber)})
+
+	// If network error
 	if err != nil {
-		logrus.Errorf("getTasksGRPC, can`t send task grpc status: %v", resp.Status)
-		return err
+		st, _ := status.FromError(err)
+		logrus.Errorf("DeleteTask, can`t get delete, err: %v, code:%v", st.Message(), st.Code())
+		return "Извините произошла непредвиденная ошибка, попробуйте позже", err
 	}
 
-	return nil
+	// If server error
+	if resp.Status.Code != int32(codes.OK) {
+		logrus.Errorf("DeleteTask, can`t get delete task, code %d", resp.Status.Code)
+		return resp.UserErrorMessage, fmt.Errorf(resp.Status.Message)
+	}
+	logrus.Info(resp)
+
+	return "", nil
 }
 
 func createTask(userText string) (*taskpb.Task, error) {

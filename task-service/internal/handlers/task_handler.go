@@ -6,8 +6,6 @@ import (
 	"tgbot/task-service/internal/repositories"
 
 	"github.com/sirupsen/logrus"
-	"google.golang.org/genproto/googleapis/rpc/status"
-	"google.golang.org/grpc/codes"
 )
 
 type TaskServer struct {
@@ -63,38 +61,35 @@ func (t *TaskServer) GetTasks(ctx context.Context, req *taskpb.GetTasksRequest) 
 
 func (t *TaskServer) DeleteTask(ctx context.Context, req *taskpb.DeleteTaskRequest) (*taskpb.DeleteTaskResponse, error) {
 	logrus.Info("user %s, start delete task%s", req.UserName, req.TaskNumber)
-	err := t.repo.DeleteTask(req.UserName, int(req.TaskNumber))
+	res := &taskpb.DeleteTaskResponse{}
+
+	errUserMessage, statusGRPC, err := t.repo.DeleteTask(req.UserName, int(req.TaskNumber))
 	if err != nil {
-		logrus.Errorf("user%s can`t delete task, err:%v", req.UserName, err)
-		res := &taskpb.DeleteTaskResponse{
-			Ok:     false,
-			Status: &status.Status{Code: int32(codes.Internal)},
-		}
-		return res, err
+		logrus.Errorf("Can`t delete task, user: %s", req.UserName)
+		statusGRPC.Message = err.Error()
+		res.Status = statusGRPC
+		res.UserErrorMessage = errUserMessage
+		return res, nil
 	}
 
-	res := &taskpb.DeleteTaskResponse{
-		Ok:     true,
-		Status: &status.Status{Code: int32(codes.OK)},
-	}
+	res.Status = statusGRPC
+	res.UserErrorMessage = errUserMessage
 	return res, nil
 }
 
 func (t *TaskServer) ChangeTask(ctx context.Context, req *taskpb.ChangeTaskRequest) (*taskpb.ChangeTaskResponse, error) {
 	logrus.Info("user %s, start change task%s", req.UserName, req.TaskNum)
-	err := t.repo.ChangeTask(req)
+	res := &taskpb.ChangeTaskResponse{}
+	errUserMessage, statusGRPC, err := t.repo.ChangeTask(req)
 	if err != nil {
-		logrus.Errorf("user%s can`t change task, err:%v", req.UserName, err)
-		res := &taskpb.ChangeTaskResponse{
-			Ok:     false,
-			Status: &status.Status{Code: int32(codes.Internal)},
-		}
-		return res, err
+		logrus.Errorf("Can`t change task, user: %s", req.UserName)
+		statusGRPC.Message = err.Error()
+		res.Status = statusGRPC
+		res.UserErrorMessage = errUserMessage
+		return res, nil
 	}
 
-	res := &taskpb.ChangeTaskResponse{
-		Ok:     true,
-		Status: &status.Status{Code: int32(codes.OK)},
-	}
+	res.Status = statusGRPC
+	res.UserErrorMessage = errUserMessage
 	return res, nil
 }
