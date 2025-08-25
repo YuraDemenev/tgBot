@@ -153,10 +153,12 @@ func (t *TasksPostgres) DeleteTask(userName string, taskNum int) error {
 	return nil
 }
 
-func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, error) {
+func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) (string, *status.Status, []taskpb.Task, error) {
 	logrus.Infof("Start get tasks for user: %s", req.UserName)
 	userHash := getUserHash(req.UserName)
 	userTasks := make([]taskpb.Task, 0)
+	errUserMessage := ""
+	status := &status.Status{}
 
 	//Get ids
 	rows, err := t.db.Query(`SELECT t.id
@@ -166,7 +168,9 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	`, userHash)
 	if err != nil {
 		logrus.Errorf("getTasks, can`t query err:%v", err)
-		return nil, err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, nil, err
 	}
 	defer rows.Close()
 	ids := make([]int, 0)
@@ -176,15 +180,28 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 		err := rows.Scan(&id)
 		if err != nil {
 			logrus.Errorf("getTasks, can`t scan err:%v", err)
-			return nil, err
+			errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+			status.Code = int32(codes.Internal)
+			return errUserMessage, status, nil, err
 		}
 		ids = append(ids, id)
+	}
+
+	// If user has 0 tasks
+	if len(ids) == 0 {
+		err := fmt.Errorf("getTasks, user has 0 tasks")
+		logrus.Error(err)
+		errUserMessage = "У тебя нет ни 1 созданного уведомления, пожалуйста сначала создай уведомление"
+		status.Code = int32(codes.NotFound)
+		return errUserMessage, status, nil, err
 	}
 
 	//Check Redis for task
 	redisTasks, missingTasks, err := t.cacheClient.GetTasks(ids)
 	if err != nil {
-		return nil, err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, nil, err
 	}
 
 	for _, v := range redisTasks {
@@ -195,7 +212,9 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	query, args, err := sqlx.In("SELECT t.task_name, t.description, t.date, t.time FROM tasks as t WHERE t.id in (?)", missingTasks)
 	if err != nil {
 		logrus.Errorf("getTasks, can`t create query with in parametr, err%v", err)
-		return nil, err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, nil, err
 	}
 
 	query = t.db.Rebind(query)
@@ -203,11 +222,12 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 	rows, err = t.db.Query(query, args...)
 	if err != nil {
 		logrus.Errorf("getTasks, can`t create query err:%v", err)
-		return nil, err
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, nil, err
 	}
 
-	//TODO нужно ли здесь defer?
-	//TODO проврить что будет если tasks 0
+	//TODO нужно ли здесь defer close?
 	//Get other tasks from db
 	defer rows.Close()
 	for rows.Next() {
@@ -217,7 +237,9 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 
 		if err := rows.Scan(&task.Name, &task.Description, &date, &myTime); err != nil {
 			logrus.Errorf("getTasks, can`t scan task:%v", err)
-			return nil, err
+			errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+			status.Code = int32(codes.Internal)
+			return errUserMessage, status, nil, err
 		}
 
 		task.Date = &taskpb.MyDate{
@@ -229,7 +251,8 @@ func (t *TasksPostgres) GetTasks(req *taskpb.GetTasksRequest) ([]taskpb.Task, er
 		userTasks = append(userTasks, task)
 	}
 
-	return userTasks, nil
+	status.Code = int32(codes.OK)
+	return errUserMessage, status, userTasks, nil
 }
 
 func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.Status, error) {

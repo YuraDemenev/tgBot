@@ -29,16 +29,16 @@ func SendTaskGRPC(userText string, userName string) (string, error) {
 	client, conn, err := connectToTaskService()
 	if err != nil {
 		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
-		return "Извини, невозможно подключиться к серверу, попробуй позже", err
+		return "Извините, невозможно подключиться к серверу, попробуй позже", err
 	}
 	defer conn.Close()
 
 	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName})
-	// If net error
+	// If network error
 	if err != nil {
 		st, _ := status.FromError(err)
 		logrus.Errorf("SendTaskGRPC, can`t send task err: %v, code:%v", st.Message(), st.Code())
-		return "", err
+		return "Извините произошла непредвиденная ошибка, попробуйте позже", err
 	}
 
 	// If server error
@@ -51,25 +51,33 @@ func SendTaskGRPC(userText string, userName string) (string, error) {
 	return resp.UserErrorMessage, nil
 }
 
-func GetUserTasks(userName string) ([]*taskpb.Task, error) {
+func GetUserTasks(userName string) (string, []*taskpb.Task, error) {
 	logrus.Infof("started GetTasksGRPC for user:%s", userName)
 
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
 		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
-		return nil, err
+		return "Извините, невозможно подключиться к серверу, попробуй позже", nil, err
 	}
 	defer conn.Close()
 
 	//Do request
 	resp, err := client.GetTasks(context.Background(), &taskpb.GetTasksRequest{UserName: userName})
+	// If network error
 	if err != nil {
-		logrus.Errorf("getTasksGRPC, can`t send task err: %v", err)
-		return nil, err
+		st, _ := status.FromError(err)
+		logrus.Errorf("GetUserTasks, can`t get tasks, err: %v, code:%v", st.Message(), st.Code())
+		return "Извините произошла непредвиденная ошибка, попробуйте позже", nil, err
 	}
 
-	return resp.Task, nil
+	// If server error
+	if resp.Status.Code != int32(codes.OK) {
+		logrus.Errorf("GetUserTasks, can`t get tasks, code %d", resp.Status.Code)
+		return resp.UserErrorMessage, nil, fmt.Errorf(resp.Status.Message)
+	}
+
+	return "", resp.Task, nil
 }
 
 func ChangeTask(userName, newValue, changeValue string, taskNum int) error {

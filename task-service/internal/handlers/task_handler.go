@@ -40,25 +40,24 @@ func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) 
 
 func (t *TaskServer) GetTasks(ctx context.Context, req *taskpb.GetTasksRequest) (*taskpb.GetTasksResponse, error) {
 	logrus.Infof("user: %s, getting tasks", req.UserName)
-	tasks, err := t.repo.GetTasks(req)
+	res := &taskpb.GetTasksResponse{}
+
+	errUserMessage, statusGRPC, tasks, err := t.repo.GetTasks(req)
 	if err != nil {
 		logrus.Errorf("Can`t get tasks, user: %s", req.UserName)
-		res := &taskpb.GetTasksResponse{
-			Ok:   false,
-			Task: nil,
-		}
-		return res, err
+		statusGRPC.Message = err.Error()
+		res.Status = statusGRPC
+		res.UserErrorMessage = errUserMessage
+		return res, nil
 	}
-
 	respTasks := make([]*taskpb.Task, 0, len(tasks))
 	for i := range tasks {
 		respTasks = append(respTasks, &tasks[i])
 	}
 
-	res := &taskpb.GetTasksResponse{
-		Ok:   true,
-		Task: respTasks,
-	}
+	res.Status = statusGRPC
+	res.UserErrorMessage = errUserMessage
+	res.Task = respTasks
 	return res, nil
 }
 

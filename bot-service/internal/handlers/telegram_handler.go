@@ -140,9 +140,13 @@ func handleCommands(bot *tgbotapi.BotAPI, chatID int64, text, userName string,
 	case "/myTasks":
 		logrus.Infof("user: %s, started /myTask", userName)
 		sessionStorage.StoreSession(userName, states.MyTasks)
-		tasks, err := GetUserTasks(userName)
+		errUserMessage, tasks, err := GetUserTasks(userName)
 		if err != nil {
 			logrus.Errorf("user %s, did`t get tasks", userName)
+			if err := sendMessage(bot, errUserMessage, chatID, userName); err != nil {
+				logrus.Errorf("handler commands, /myTasks can`t send message, error: %v", err)
+				return
+			}
 			return
 		}
 		logrus.Info("user %s, got his task", userName)

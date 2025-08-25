@@ -173,11 +173,12 @@ func (x *GetTasksRequest) GetUserName() string {
 }
 
 type GetTasksResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	Task          []*Task                `protobuf:"bytes,2,rep,name=task,proto3" json:"task,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Status           *status.Status         `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	UserErrorMessage string                 `protobuf:"bytes,2,opt,name=userErrorMessage,proto3" json:"userErrorMessage,omitempty"`
+	Task             []*Task                `protobuf:"bytes,3,rep,name=task,proto3" json:"task,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetTasksResponse) Reset() {
@@ -210,11 +211,18 @@ func (*GetTasksResponse) Descriptor() ([]byte, []int) {
 	return file_task_service_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetTasksResponse) GetOk() bool {
+func (x *GetTasksResponse) GetStatus() *status.Status {
 	if x != nil {
-		return x.Ok
+		return x.Status
 	}
-	return false
+	return nil
+}
+
+func (x *GetTasksResponse) GetUserErrorMessage() string {
+	if x != nil {
+		return x.UserErrorMessage
+	}
+	return ""
 }
 
 func (x *GetTasksResponse) GetTask() []*Task {
@@ -278,11 +286,11 @@ func (x *DeleteTaskRequest) GetTaskNumber() int64 {
 }
 
 type DeleteTaskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
-	Status        *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	UserErrorMessage string                 `protobuf:"bytes,1,opt,name=userErrorMessage,proto3" json:"userErrorMessage,omitempty"`
+	Status           *status.Status         `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *DeleteTaskResponse) Reset() {
@@ -315,11 +323,11 @@ func (*DeleteTaskResponse) Descriptor() ([]byte, []int) {
 	return file_task_service_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *DeleteTaskResponse) GetOk() bool {
+func (x *DeleteTaskResponse) GetUserErrorMessage() string {
 	if x != nil {
-		return x.Ok
+		return x.UserErrorMessage
 	}
-	return false
+	return ""
 }
 
 func (x *DeleteTaskResponse) GetStatus() *status.Status {
@@ -464,18 +472,19 @@ const file_task_service_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\v2\x12.google.rpc.StatusR\x06status\x12*\n" +
 	"\x10userErrorMessage\x18\x02 \x01(\tR\x10userErrorMessage\"-\n" +
 	"\x0fGetTasksRequest\x12\x1a\n" +
-	"\buserName\x18\x01 \x01(\tR\buserName\"B\n" +
-	"\x10GetTasksResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1e\n" +
-	"\x04task\x18\x02 \x03(\v2\n" +
+	"\buserName\x18\x01 \x01(\tR\buserName\"\x8a\x01\n" +
+	"\x10GetTasksResponse\x12*\n" +
+	"\x06status\x18\x01 \x01(\v2\x12.google.rpc.StatusR\x06status\x12*\n" +
+	"\x10userErrorMessage\x18\x02 \x01(\tR\x10userErrorMessage\x12\x1e\n" +
+	"\x04task\x18\x03 \x03(\v2\n" +
 	".task.TaskR\x04task\"O\n" +
 	"\x11DeleteTaskRequest\x12\x1a\n" +
 	"\buserName\x18\x01 \x01(\tR\buserName\x12\x1e\n" +
 	"\n" +
 	"taskNumber\x18\x02 \x01(\x03R\n" +
-	"taskNumber\"P\n" +
-	"\x12DeleteTaskResponse\x12\x0e\n" +
-	"\x02ok\x18\x01 \x01(\bR\x02ok\x12*\n" +
+	"taskNumber\"l\n" +
+	"\x12DeleteTaskResponse\x12*\n" +
+	"\x10userErrorMessage\x18\x01 \x01(\tR\x10userErrorMessage\x12*\n" +
 	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status\"\x87\x01\n" +
 	"\x11ChangeTaskRequest\x12\x1a\n" +
 	"\buserName\x18\x01 \x01(\tR\buserName\x12\x18\n" +
@@ -519,24 +528,25 @@ var file_task_service_proto_goTypes = []any{
 	(*status.Status)(nil),      // 9: google.rpc.Status
 }
 var file_task_service_proto_depIdxs = []int32{
-	8, // 0: task.SendTaskRequest.task:type_name -> task.Task
-	9, // 1: task.SendTaskResponse.status:type_name -> google.rpc.Status
-	8, // 2: task.GetTasksResponse.task:type_name -> task.Task
-	9, // 3: task.DeleteTaskResponse.status:type_name -> google.rpc.Status
-	9, // 4: task.ChangeTaskResponse.status:type_name -> google.rpc.Status
-	0, // 5: task.TaskService.SendTask:input_type -> task.SendTaskRequest
-	2, // 6: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
-	4, // 7: task.TaskService.DeleteTask:input_type -> task.DeleteTaskRequest
-	6, // 8: task.TaskService.ChangeTask:input_type -> task.ChangeTaskRequest
-	1, // 9: task.TaskService.SendTask:output_type -> task.SendTaskResponse
-	3, // 10: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
-	5, // 11: task.TaskService.DeleteTask:output_type -> task.DeleteTaskResponse
-	7, // 12: task.TaskService.ChangeTask:output_type -> task.ChangeTaskResponse
-	9, // [9:13] is the sub-list for method output_type
-	5, // [5:9] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	8,  // 0: task.SendTaskRequest.task:type_name -> task.Task
+	9,  // 1: task.SendTaskResponse.status:type_name -> google.rpc.Status
+	9,  // 2: task.GetTasksResponse.status:type_name -> google.rpc.Status
+	8,  // 3: task.GetTasksResponse.task:type_name -> task.Task
+	9,  // 4: task.DeleteTaskResponse.status:type_name -> google.rpc.Status
+	9,  // 5: task.ChangeTaskResponse.status:type_name -> google.rpc.Status
+	0,  // 6: task.TaskService.SendTask:input_type -> task.SendTaskRequest
+	2,  // 7: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
+	4,  // 8: task.TaskService.DeleteTask:input_type -> task.DeleteTaskRequest
+	6,  // 9: task.TaskService.ChangeTask:input_type -> task.ChangeTaskRequest
+	1,  // 10: task.TaskService.SendTask:output_type -> task.SendTaskResponse
+	3,  // 11: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
+	5,  // 12: task.TaskService.DeleteTask:output_type -> task.DeleteTaskResponse
+	7,  // 13: task.TaskService.ChangeTask:output_type -> task.ChangeTaskResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_task_service_proto_init() }

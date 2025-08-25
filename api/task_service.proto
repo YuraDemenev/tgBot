@@ -29,8 +29,9 @@ message GetTasksRequest {
 }
 
 message GetTasksResponse {
-  bool ok=1;
-  repeated Task task=2;
+  google.rpc.Status status=1;
+  string userErrorMessage=2;
+  repeated Task task=3;
 }
 
 //DeleteTask
@@ -40,7 +41,7 @@ message DeleteTaskRequest {
 }
 
 message DeleteTaskResponse {
-  bool ok=1;
+  string userErrorMessage=1;
   google.rpc.Status status=2;
 }
 
