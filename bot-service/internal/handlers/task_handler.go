@@ -17,7 +17,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func SendTaskGRPC(userText string, userName string) (string, error) {
+func SendTaskGRPC(userText string, userName string, chatID int64) (string, error) {
 	logrus.Infof("started SendTaskGRPC for user:%s", userName)
 
 	task, err := createTask(userText)
@@ -33,7 +33,7 @@ func SendTaskGRPC(userText string, userName string) (string, error) {
 	}
 	defer conn.Close()
 
-	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName})
+	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName, ChatID: chatID})
 	// If network error
 	if err != nil {
 		st, _ := status.FromError(err)
@@ -185,7 +185,7 @@ func createTask(userText string) (*taskpb.Task, error) {
 	}
 
 	// Work with time
-	parsedTime, err := time.Parse("15:05", stringsArr[3])
+	parsedTime, err := time.Parse("15:04", stringsArr[3])
 	if err != nil {
 		logrus.Errorf("AddTaskService, can`t parse time err: %w", err)
 		return nil, err

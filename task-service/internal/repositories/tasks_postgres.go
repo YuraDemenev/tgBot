@@ -347,7 +347,8 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 
 	// Add task
 	var taskID int
-	// Check valid time
+	myTime := task.Time.AsTime()
+	// Check valid date
 	date, err := validTime(int(task.Date.Day), int(task.Date.Month), int(task.Date.Year))
 	if err != nil {
 		logrus.Errorf("SaveTask, can`t create date, err:%v ", err)
@@ -357,7 +358,7 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 	}
 
 	// Check time before
-	if date.Before(time.Now()) {
+	if date.Before(time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)) {
 		err := fmt.Errorf("user date before time now")
 		logrus.Errorf("SaveTask, err:%v", err)
 		errUserMessage = "Вы ввели дату, которая уже прошла, пожалуйста ввидете дату с будующим временем"
@@ -375,7 +376,6 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 	}
 
 	// Insert task
-	myTime := task.Time.AsTime()
 	row = tx.QueryRow(`
 		INSERT INTO tasks (user_id, task_name, description, date, time)
 		VALUES ($1, $2, $3, $4, $5)
@@ -392,7 +392,7 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 	}
 
 	// Publish in rabbitMQ
-	err = t.r.Publish(rabbitmq.DelayedExchange, rabbitmq.NotifyTaskQueue, rabbitmq.NotifyKey, task)
+	err = t.r.Publish(rabbitmq.DelayedExchange, rabbitmq.NotifyTaskQueue, rabbitmq.NotifyKey, task, int(req.ChatID))
 	if err != nil {
 		tx.Rollback()
 		logrus.Errorf("SaveTask, Can`t send user:%d task to rabbitMQ, err:%v", userID, err)

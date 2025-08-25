@@ -12,7 +12,7 @@ import (
 )
 
 func AddTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, sessionStorage *services.SessionStorage) {
-	UserErrorMessage, err := SendTaskGRPC(text, userName)
+	UserErrorMessage, err := SendTaskGRPC(text, userName, chatID)
 	if err != nil {
 		//Write message to user
 		if err := sendMessage(bot, UserErrorMessage, chatID, userName); err != nil {

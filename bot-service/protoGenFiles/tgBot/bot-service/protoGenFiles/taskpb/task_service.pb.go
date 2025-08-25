@@ -27,6 +27,7 @@ type SendTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 	UserName      string                 `protobuf:"bytes,2,opt,name=userName,proto3" json:"userName,omitempty"`
+	ChatID        int64                  `protobuf:"varint,3,opt,name=chatID,proto3" json:"chatID,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -73,6 +74,13 @@ func (x *SendTaskRequest) GetUserName() string {
 		return x.UserName
 	}
 	return ""
+}
+
+func (x *SendTaskRequest) GetChatID() int64 {
+	if x != nil {
+		return x.ChatID
+	}
+	return 0
 }
 
 type SendTaskResponse struct {
@@ -463,11 +471,12 @@ var File_task_service_proto protoreflect.FileDescriptor
 const file_task_service_proto_rawDesc = "" +
 	"\n" +
 	"\x12task_service.proto\x12\x04task\x1a\x17google/rpc/status.proto\x1a\n" +
-	"task.proto\"M\n" +
+	"task.proto\"e\n" +
 	"\x0fSendTaskRequest\x12\x1e\n" +
 	"\x04task\x18\x01 \x01(\v2\n" +
 	".task.TaskR\x04task\x12\x1a\n" +
-	"\buserName\x18\x02 \x01(\tR\buserName\"j\n" +
+	"\buserName\x18\x02 \x01(\tR\buserName\x12\x16\n" +
+	"\x06chatID\x18\x03 \x01(\x03R\x06chatID\"j\n" +
 	"\x10SendTaskResponse\x12*\n" +
 	"\x06status\x18\x01 \x01(\v2\x12.google.rpc.StatusR\x06status\x12*\n" +
 	"\x10userErrorMessage\x18\x02 \x01(\tR\x10userErrorMessage\"-\n" +

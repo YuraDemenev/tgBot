@@ -18,6 +18,7 @@ type RabbitMQ struct {
 type taskNotify struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	ChatID      int    `json:"chatID"`
 }
 
 const DelayedExchange = "delayed-exchange"
@@ -93,17 +94,17 @@ func (r *RabbitMQ) DeclareQueue(exchangeName, queueName, routingKey string) {
 	}
 }
 
-func (r *RabbitMQ) Publish(exchangeName, queueName, rountingKey string, task *taskpb.Task) error {
+func (r *RabbitMQ) Publish(exchangeName, queueName, rountingKey string, task *taskpb.Task, chatID int) error {
 	taskNoify := taskNotify{
 		Name:        task.Name,
 		Description: task.Description,
+		ChatID:      chatID,
 	}
 	body, err := json.Marshal(taskNoify)
 	if err != nil {
 		logrus.Errorf("rabbitMQ, Publish, can`t marshal taskNotify, err%v", err)
 		return err
 	}
-
 	// Prepare date
 	targetTime := time.Date(
 		int(task.Date.Year),
