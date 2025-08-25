@@ -10,41 +10,45 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func SendTaskGRPC(userText string, userName string) error {
+func SendTaskGRPC(userText string, userName string) (string, error) {
 	logrus.Infof("started SendTaskGRPC for user:%s", userName)
 
 	task, err := createTask(userText)
 	if err != nil {
-		return err
+		return "Невозможно создать задачу, возможно ты что-то не так написал", err
 	}
 
-	//TODO Return health check
-	// Do health check
-	// err = healthCheck()
-	// if err != nil {
-	// 	return err
-	// }
 	// Create grpc connection to task-service
 	client, conn, err := connectToTaskService()
 	if err != nil {
 		logrus.Errorf("DeleteUserTasks, can`t connect to grpc, err: %v", err)
-		return err
+		return "Извини, невозможно подключиться к серверу, попробуй позже", err
 	}
 	defer conn.Close()
 
 	resp, err := client.SendTask(context.Background(), &taskpb.SendTaskRequest{Task: task, UserName: userName})
+	// If net error
 	if err != nil {
-		logrus.Errorf("SendTaskGRPC, can`t send task err: %v", err)
-		return err
+		st, _ := status.FromError(err)
+		logrus.Errorf("SendTaskGRPC, can`t send task err: %v, code:%v", st.Message(), st.Code())
+		return "", err
 	}
-	//TODO empty resp
-	logrus.Info(resp)
-	return nil
+
+	// If server error
+	if resp.Status.Code != int32(codes.OK) {
+		logrus.Errorf("SendTaskGRPC, can`t send task, code %d", resp.Status.Code)
+		return resp.UserErrorMessage, fmt.Errorf(resp.Status.Message)
+	}
+
+	logrus.Info(resp.Status)
+	return resp.UserErrorMessage, nil
 }
 
 func GetUserTasks(userName string) ([]*taskpb.Task, error) {

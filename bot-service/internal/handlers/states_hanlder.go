@@ -12,11 +12,10 @@ import (
 )
 
 func AddTaskHandler(text, userName string, bot *tgbotapi.BotAPI, chatID int64, sessionStorage *services.SessionStorage) {
-	err := SendTaskGRPC(text, userName)
+	UserErrorMessage, err := SendTaskGRPC(text, userName)
 	if err != nil {
 		//Write message to user
-		str := fmt.Sprintf(`Извини %s, но кажется ты совершил ошибку, давай попробуем ещё раз. Напиши сообщение для выполнения комманды`, userName)
-		if err := sendMessage(bot, str, chatID, userName); err != nil {
+		if err := sendMessage(bot, UserErrorMessage, chatID, userName); err != nil {
 			logrus.Errorf("handlerStates, can`t send message, error: %v", err)
 			return
 		}

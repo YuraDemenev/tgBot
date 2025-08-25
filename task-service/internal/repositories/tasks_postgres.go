@@ -277,11 +277,19 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 
 	// Add task
 	var taskID int
+	// Check valid time
+	date, err := validTime(int(task.Date.Day), int(task.Date.Month), int(task.Date.Year))
+	if err != nil {
+		logrus.Errorf("SaveTask, can`t create date, err:%v ", err)
+		errUserMessage = "Вы ввели неккоректную дату, пожалуйста напишите существующую дату"
+		status.Code = int32(codes.InvalidArgument)
+		return errUserMessage, status, err
+	}
+
 	// Check time before
-	date := time.Date(int(task.Date.Year), time.Month(task.Date.Month), int(task.Date.Day), 0, 0, 0, 0, time.UTC)
 	if date.Before(time.Now()) {
 		err := fmt.Errorf("user date before time now")
-		logrus.Errorf("SaveTask, err:%v ", err)
+		logrus.Errorf("SaveTask, err:%v", err)
 		errUserMessage = "Вы ввели дату, которая уже прошла, пожалуйста ввидете дату с будующим временем"
 		status.Code = int32(codes.InvalidArgument)
 		return errUserMessage, status, err
@@ -326,4 +334,14 @@ func getUserHash(userName string) string {
 	h.Write([]byte(userName))
 
 	return hex.EncodeToString(h.Sum([]byte(salt)))
+}
+
+func validTime(day, month, year int) (time.Time, error) {
+	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	//validate time because go auto change wrong time
+
+	if t.Day() != day || int(t.Month()) != month || t.Year() != year {
+		return time.Time{}, fmt.Errorf("user send wrong date: %02d.%02d.%d", day, month, year)
+	}
+	return t, nil
 }

@@ -7,7 +7,7 @@ import "google/rpc/status.proto";
 import "task.proto";
 
 service TaskService {
-  rpc SendTask(SendTaskRequest) returns (google.rpc.Status);
+  rpc SendTask(SendTaskRequest) returns (SendTaskResponse);
   rpc GetTasks (GetTasksRequest) returns (GetTasksResponse);
   rpc DeleteTask (DeleteTaskRequest) returns (DeleteTaskResponse);
   rpc ChangeTask (ChangeTaskRequest) returns (ChangeTaskResponse);

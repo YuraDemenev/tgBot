@@ -83,7 +83,7 @@ func main() {
 	})
 
 	//Init rabbitMQ
-	r := rabbitmq.NewRabbitMQ("ampq://quest@localhost:5672/")
+	r := rabbitmq.NewRabbitMQ("amqp://guest:guest@localhost:5672/")
 	defer r.Close()
 
 	r.DeclareQueue("delayed-exchange", "notify-task-queue", "notify")

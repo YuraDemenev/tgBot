@@ -8,10 +8,9 @@ package taskpb
 
 import (
 	context "context"
-	status "google.golang.org/genproto/googleapis/rpc/status"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
-	status1 "google.golang.org/grpc/status"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -30,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TaskServiceClient interface {
-	SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*status.Status, error)
+	SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*SendTaskResponse, error)
 	GetTasks(ctx context.Context, in *GetTasksRequest, opts ...grpc.CallOption) (*GetTasksResponse, error)
 	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*DeleteTaskResponse, error)
 	ChangeTask(ctx context.Context, in *ChangeTaskRequest, opts ...grpc.CallOption) (*ChangeTaskResponse, error)
@@ -44,9 +43,9 @@ func NewTaskServiceClient(cc grpc.ClientConnInterface) TaskServiceClient {
 	return &taskServiceClient{cc}
 }
 
-func (c *taskServiceClient) SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*status.Status, error) {
+func (c *taskServiceClient) SendTask(ctx context.Context, in *SendTaskRequest, opts ...grpc.CallOption) (*SendTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(status.Status)
+	out := new(SendTaskResponse)
 	err := c.cc.Invoke(ctx, TaskService_SendTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -88,7 +87,7 @@ func (c *taskServiceClient) ChangeTask(ctx context.Context, in *ChangeTaskReques
 // All implementations must embed UnimplementedTaskServiceServer
 // for forward compatibility.
 type TaskServiceServer interface {
-	SendTask(context.Context, *SendTaskRequest) (*status.Status, error)
+	SendTask(context.Context, *SendTaskRequest) (*SendTaskResponse, error)
 	GetTasks(context.Context, *GetTasksRequest) (*GetTasksResponse, error)
 	DeleteTask(context.Context, *DeleteTaskRequest) (*DeleteTaskResponse, error)
 	ChangeTask(context.Context, *ChangeTaskRequest) (*ChangeTaskResponse, error)
@@ -102,17 +101,17 @@ type TaskServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedTaskServiceServer struct{}
 
-func (UnimplementedTaskServiceServer) SendTask(context.Context, *SendTaskRequest) (*status.Status, error) {
-	return nil, status1.Errorf(codes.Unimplemented, "method SendTask not implemented")
+func (UnimplementedTaskServiceServer) SendTask(context.Context, *SendTaskRequest) (*SendTaskResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendTask not implemented")
 }
 func (UnimplementedTaskServiceServer) GetTasks(context.Context, *GetTasksRequest) (*GetTasksResponse, error) {
-	return nil, status1.Errorf(codes.Unimplemented, "method GetTasks not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method GetTasks not implemented")
 }
 func (UnimplementedTaskServiceServer) DeleteTask(context.Context, *DeleteTaskRequest) (*DeleteTaskResponse, error) {
-	return nil, status1.Errorf(codes.Unimplemented, "method DeleteTask not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTask not implemented")
 }
 func (UnimplementedTaskServiceServer) ChangeTask(context.Context, *ChangeTaskRequest) (*ChangeTaskResponse, error) {
-	return nil, status1.Errorf(codes.Unimplemented, "method ChangeTask not implemented")
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeTask not implemented")
 }
 func (UnimplementedTaskServiceServer) mustEmbedUnimplementedTaskServiceServer() {}
 func (UnimplementedTaskServiceServer) testEmbeddedByValue()                     {}

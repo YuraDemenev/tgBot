@@ -484,9 +484,9 @@ const file_task_service_proto_rawDesc = "" +
 	"\vchangeValue\x18\x04 \x01(\tR\vchangeValue\"P\n" +
 	"\x12ChangeTaskResponse\x12\x0e\n" +
 	"\x02ok\x18\x01 \x01(\bR\x02ok\x12*\n" +
-	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status2\x81\x02\n" +
-	"\vTaskService\x125\n" +
-	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x12.google.rpc.Status\x129\n" +
+	"\x06status\x18\x02 \x01(\v2\x12.google.rpc.StatusR\x06status2\x85\x02\n" +
+	"\vTaskService\x129\n" +
+	"\bSendTask\x12\x15.task.SendTaskRequest\x1a\x16.task.SendTaskResponse\x129\n" +
 	"\bGetTasks\x12\x15.task.GetTasksRequest\x1a\x16.task.GetTasksResponse\x12?\n" +
 	"\n" +
 	"DeleteTask\x12\x17.task.DeleteTaskRequest\x1a\x18.task.DeleteTaskResponse\x12?\n" +
@@ -528,7 +528,7 @@ var file_task_service_proto_depIdxs = []int32{
 	2, // 6: task.TaskService.GetTasks:input_type -> task.GetTasksRequest
 	4, // 7: task.TaskService.DeleteTask:input_type -> task.DeleteTaskRequest
 	6, // 8: task.TaskService.ChangeTask:input_type -> task.ChangeTaskRequest
-	9, // 9: task.TaskService.SendTask:output_type -> google.rpc.Status
+	1, // 9: task.TaskService.SendTask:output_type -> task.SendTaskResponse
 	3, // 10: task.TaskService.GetTasks:output_type -> task.GetTasksResponse
 	5, // 11: task.TaskService.DeleteTask:output_type -> task.DeleteTaskResponse
 	7, // 12: task.TaskService.ChangeTask:output_type -> task.ChangeTaskResponse

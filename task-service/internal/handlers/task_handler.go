@@ -28,9 +28,10 @@ func (t *TaskServer) SendTask(ctx context.Context, req *taskpb.SendTaskRequest) 
 	errUserMessage, statusGRPC, err := t.repo.SaveTask(req)
 	if err != nil {
 		logrus.Errorf("Can`t save task, user: %s", req.UserName)
+		statusGRPC.Message = err.Error()
 		res.Status = statusGRPC
 		res.UserErrorMessage = errUserMessage
-		return res, err
+		return res, nil
 	}
 	res.Status = statusGRPC
 	res.UserErrorMessage = errUserMessage
