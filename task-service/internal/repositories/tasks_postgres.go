@@ -374,6 +374,7 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 		return errUserMessage, status, err
 	}
 
+	// Insert task
 	myTime := task.Time.AsTime()
 	row = tx.QueryRow(`
 		INSERT INTO tasks (user_id, task_name, description, date, time)
@@ -389,10 +390,22 @@ func (t *TasksPostgres) SaveTask(req *taskpb.SendTaskRequest) (string, *status.S
 		status.Code = int32(codes.Internal)
 		return errUserMessage, status, err
 	}
+
+	// Publish in rabbitMQ
+	err = t.r.Publish(rabbitmq.DelayedExchange, rabbitmq.NotifyTaskQueue, rabbitmq.NotifyKey, task)
+	if err != nil {
+		tx.Rollback()
+		logrus.Errorf("SaveTask, Can`t send user:%d task to rabbitMQ, err:%v", userID, err)
+		errUserMessage = "Произошла ошибка на стороне сервера, пожалуйста попробуйте ещё раз через некоторое время"
+		status.Code = int32(codes.Internal)
+		return errUserMessage, status, err
+	}
+
 	tx.Commit()
 
 	//Set task to redis
 	t.cacheClient.SetTask(task, taskID)
+
 	status.Code = int32(codes.OK)
 	return errUserMessage, status, nil
 }
@@ -408,8 +421,8 @@ func getUserHash(userName string) string {
 
 func validTime(day, month, year int) (time.Time, error) {
 	t := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-	//validate time because go auto change wrong time
 
+	//validate time because go auto change wrong time
 	if t.Day() != day || int(t.Month()) != month || t.Year() != year {
 		return time.Time{}, fmt.Errorf("user send wrong date: %02d.%02d.%d", day, month, year)
 	}

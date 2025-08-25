@@ -1,7 +1,9 @@
 package rabbitmq
 
 import (
+	"encoding/json"
 	"fmt"
+	"tgbot/bot-service/protoGenFiles/tgBot/bot-service/protoGenFiles/taskpb"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -12,6 +14,15 @@ type RabbitMQ struct {
 	conn    *amqp.Connection
 	channel *amqp.Channel
 }
+
+type taskNotify struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+const DelayedExchange = "delayed-exchange"
+const NotifyTaskQueue = "notify-task-queue"
+const NotifyKey = "notify"
 
 func NewRabbitMQ(url string) *RabbitMQ {
 	conn, err := amqp.Dial(url)
@@ -82,14 +93,24 @@ func (r *RabbitMQ) DeclareQueue(exchangeName, queueName, routingKey string) {
 	}
 }
 
-func (r *RabbitMQ) Publish(exchangeName, queueName, rountingKey, body string, timer time.Time, date time.Time) error {
+func (r *RabbitMQ) Publish(exchangeName, queueName, rountingKey string, task *taskpb.Task) error {
+	taskNoify := taskNotify{
+		Name:        task.Name,
+		Description: task.Description,
+	}
+	body, err := json.Marshal(taskNoify)
+	if err != nil {
+		logrus.Errorf("rabbitMQ, Publish, can`t marshal taskNotify, err%v", err)
+		return err
+	}
+
 	// Prepare date
 	targetTime := time.Date(
-		date.Year(),
-		date.Month(),
-		date.Day(),
-		timer.Hour(),
-		timer.Minute(),
+		int(task.Date.Year),
+		time.Month(task.Date.Month),
+		int(task.Date.Day),
+		task.Time.AsTime().Hour(),
+		task.Time.AsTime().Minute(),
 		0,
 		0,
 		time.Local,
@@ -107,7 +128,7 @@ func (r *RabbitMQ) Publish(exchangeName, queueName, rountingKey, body string, ti
 	}
 
 	// Publish
-	err := r.channel.Publish(
+	err = r.channel.Publish(
 		exchangeName,
 		rountingKey,
 		false,
@@ -134,6 +155,3 @@ func (r *RabbitMQ) Close() {
 		r.conn.Close()
 	}
 }
-
-// 	date := time.Date(2025, 2, 26, 0, 0, 0, 0, time.Local)
-// 	timer := time.Date(0, 0, 0, 15, 0, 0, 0, time.Local)

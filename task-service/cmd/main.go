@@ -86,7 +86,7 @@ func main() {
 	r := rabbitmq.NewRabbitMQ("amqp://guest:guest@localhost:5672/")
 	defer r.Close()
 
-	r.DeclareQueue("delayed-exchange", "notify-task-queue", "notify")
+	r.DeclareQueue(rabbitmq.DelayedExchange, rabbitmq.NotifyTaskQueue, rabbitmq.NotifyKey)
 
 	//init repository
 	repo := repositories.NewRepository(db, redisCache, r)
